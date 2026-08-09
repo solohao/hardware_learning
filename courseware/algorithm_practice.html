@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手撕算法练习</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 900px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; border-left: 4px solid #2c5282; padding-left: .5rem; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    .tip { background: #ebf8ff; border-left: 4px solid #4299e1; padding: .75rem 1rem; margin: .8rem 0; border-radius: 0 6px 6px 0; color: #2b6cb0; }
+    .nav { margin-top: 1.5rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>嵌入式面试 · 手撕算法练习</h1>
+    <p>字符串/数组 · 链表 · 栈/队列 · 位运算 · 排序 · 综合</p>
+  </header>
+
+  <div class="container">
+    <div class="module">
+      <h2>一、字符串 / 数组</h2>
+
+      <h3>1.1 反转字符串</h3>
+      <p>双指针从两端向中间交换字符。</p>
+      <pre><code>void reverse(char *s, int len) {
+    int i = 0, j = len - 1;
+    while (i < j) {
+        char t = s[i]; s[i] = s[j]; s[j] = t;
+        i++; j--;
+    }
+}</code></pre>
+
+      <h3>1.2 实现 atoi</h3>
+      <p>跳过前导空格，处理正负号，逐位转数字，注意溢出。</p>
+      <pre><code>int my_atoi(const char *s) {
+    int sign = 1, res = 0;
+    while (*s == ' ') s++;
+    if (*s == '-' || *s == '+') {
+        sign = (*s == '-') ? -1 : 1;
+        s++;
+    }
+    while (*s >= '0' && *s <= '9') {
+        int d = *s - '0';
+        // 简单溢出检查
+        if (res > (INT_MAX - d) / 10) return sign == 1 ? INT_MAX : INT_MIN;
+        res = res * 10 + d;
+        s++;
+    }
+    return sign * res;
+}</code></pre>
+
+      <h3>1.3 二分查找</h3>
+      <pre><code>int binary_search(int *arr, int n, int target) {
+    int l = 0, r = n - 1;
+    while (l <= r) {
+        int m = l + (r - l) / 2;
+        if (arr[m] == target) return m;
+        if (arr[m] < target) l = m + 1;
+        else r = m - 1;
+    }
+    return -1;
+}</code></pre>
+
+      <h3>1.4 两数之和（返回索引，数组已排序）</h3>
+      <p>双指针，和小了左移，大了右移。</p>
+      <pre><code>void two_sum(int *arr, int n, int target, int *out) {
+    int l = 0, r = n - 1;
+    while (l < r) {
+        int sum = arr[l] + arr[r];
+        if (sum == target) { out[0] = l; out[1] = r; return; }
+        if (sum < target) l++;
+        else r--;
+    }
+    out[0] = out[1] = -1;
+}</code></pre>
+
+      <h3>1.5 寻找缺失数字（0..n 中缺一个）</h3>
+      <p>利用下标和值的对应关系，用异或或求和。</p>
+      <pre><code>int missing_number(int *arr, int n) {
+    int x = 0;
+    for (int i = 0; i < n; i++) x ^= (i + 1) ^ arr[i];
+    return x;
+}</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>二、链表</h2>
+
+      <h3>2.1 反转单链表</h3>
+      <pre><code>struct ListNode { int val; struct ListNode *next; };
+
+struct ListNode* reverse_list(struct ListNode *head) {
+    struct ListNode *prev = NULL, *cur = head;
+    while (cur) {
+        struct ListNode *next = cur->next;
+        cur->next = prev;
+        prev = cur;
+        cur = next;
+    }
+    return prev;
+}</code></pre>
+
+      <h3>2.2 判断链表是否有环</h3>
+      <p>快慢指针，相遇则有环。</p>
+      <pre><code>int has_cycle(struct ListNode *head) {
+    struct ListNode *slow = head, *fast = head;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+        if (slow == fast) return 1;
+    }
+    return 0;
+}</code></pre>
+
+      <h3>2.3 合并两个有序链表</h3>
+      <pre><code>struct ListNode* merge_two_lists(struct ListNode *l1, struct ListNode *l2) {
+    struct ListNode dummy, *p = &dummy;
+    dummy.next = NULL;
+    while (l1 && l2) {
+        if (l1->val < l2->val) { p->next = l1; l1 = l1->next; }
+        else { p->next = l2; l2 = l2->next; }
+        p = p->next;
+    }
+    p->next = l1 ? l1 : l2;
+    return dummy.next;
+}</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>三、栈与队列</h2>
+
+      <h3>3.1 用两个栈实现队列</h3>
+      <pre><code>#define MAX 100
+int s1[MAX], s2[MAX];
+int top1 = -1, top2 = -1;
+
+void push(int x) { s1[++top1] = x; }
+
+int pop() {
+    if (top2 == -1) {
+        while (top1 >= 0) s2[++top2] = s1[top1--];
+    }
+    if (top2 == -1) return -1;  // 空
+    return s2[top2--];
+}</code></pre>
+
+      <h3>3.2 最小栈</h3>
+      <p>用一个辅助栈保存当前最小值。</p>
+      <pre><code>int data[MAX], minstk[MAX];
+int top = -1, mtop = -1;
+
+void min_push(int x) {
+    data[++top] = x;
+    if (mtop == -1 || x <= minstk[mtop]) minstk[++mtop] = x;
+}
+
+int min_pop() {
+    if (top == -1) return -1;
+    int v = data[top--];
+    if (v == minstk[mtop]) mtop--;
+    return v;
+}
+
+int get_min() { return mtop == -1 ? -1 : minstk[mtop]; }</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>四、位运算</h2>
+
+      <h3>4.1 判断是否为 2 的幂</h3>
+      <pre><code>int is_power_of_two(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
+}</code></pre>
+
+      <h3>4.2 统计二进制 1 的个数</h3>
+      <pre><code>int count_ones(unsigned int n) {
+    int c = 0;
+    while (n) {
+        n &= n - 1;  // 清除最低位的 1
+        c++;
+    }
+    return c;
+}</code></pre>
+
+      <h3>4.3 不用临时变量交换两个数</h3>
+      <pre><code>void swap(int *a, int *b) {
+    if (a == b) return;
+    *a = *a ^ *b;
+    *b = *a ^ *b;
+    *a = *a ^ *b;
+}</code></pre>
+      <div class="tip">注意：异或交换在嵌入式中可读性差，面试写出思路即可，实际代码建议用临时变量。</div>
+    </div>
+
+    <div class="module">
+      <h2>五、排序</h2>
+
+      <h3>5.1 快速排序</h3>
+      <pre><code>void quick_sort(int *arr, int l, int r) {
+    if (l >= r) return;
+    int pivot = arr[l], i = l, j = r;
+    while (i < j) {
+        while (i < j && arr[j] >= pivot) j--;
+        while (i < j && arr[i] <= pivot) i++;
+        if (i < j) { int t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    }
+    arr[l] = arr[i]; arr[i] = pivot;
+    quick_sort(arr, l, i - 1);
+    quick_sort(arr, i + 1, r);
+}</code></pre>
+
+      <h3>5.2 归并排序</h3>
+      <pre><code>void merge(int *arr, int l, int m, int r, int *tmp) {
+    int i = l, j = m + 1, k = 0;
+    while (i <= m && j <= r) tmp[k++] = (arr[i] <= arr[j]) ? arr[i++] : arr[j++];
+    while (i <= m) tmp[k++] = arr[i++];
+    while (j <= r) tmp[k++] = arr[j++];
+    for (i = 0; i < k; i++) arr[l + i] = tmp[i];
+}
+
+void merge_sort(int *arr, int l, int r, int *tmp) {
+    if (l >= r) return;
+    int m = l + (r - l) / 2;
+    merge_sort(arr, l, m, tmp);
+    merge_sort(arr, m + 1, r, tmp);
+    merge(arr, l, m, r, tmp);
+}</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>六、综合 / 高频</h2>
+
+      <h3>6.1 LRU 缓存（简述 + 结构）</h3>
+      <p>用双向链表维护使用顺序 + 哈希表查找 O(1)。访问时提到头部，淘汰尾部。</p>
+      <pre><code>// 节点定义
+typedef struct Node {
+    int key, val;
+    struct Node *prev, *next;
+} Node;
+
+// 思想：hash[key] -> Node*，访问时把节点移到链表头部，
+//      超过容量时删除链表尾部节点并从 hash 中移除。
+</code></pre>
+
+      <h3>6.2 约瑟夫环</h3>
+      <p>递推公式：f(n, m) = (f(n-1, m) + m) % n。</p>
+      <pre><code>int josephus(int n, int m) {
+    int res = 0;  // f(1, m) = 0
+    for (int i = 2; i <= n; i++)
+        res = (res + m) % i;
+    return res;
+}</code></pre>
+
+      <h3>6.3 斐波那契数列</h3>
+      <pre><code>int fib(int n) {
+    if (n <= 1) return n;
+    int a = 0, b = 1;
+    for (int i = 2; i <= n; i++) {
+        int t = a + b;
+        a = b;
+        b = t;
+    }
+    return b;
+}</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>面试手撕要点</h2>
+      <ul>
+        <li><strong>先讲思路</strong>：时间复杂度、空间复杂度、边界条件。</li>
+        <li><strong>边写边说</strong>：面试官听的是你的思考过程，不是只看书写结果。</li>
+        <li><strong>边界检查</strong>：空指针、空数组、长度为 1、最大/最小值、溢出。</li>
+        <li><strong>模块化</strong>：先写框架，再填细节；能用辅助函数/哨兵节点就别硬写。</li>
+        <li><strong>嵌入式常考</strong>：指针操作、位运算、有限状态机、数组/字符串、链表。</li>
+      </ul>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← 返回课程目录</a>
+    </div>
+  </div>
+</body>
+</html>

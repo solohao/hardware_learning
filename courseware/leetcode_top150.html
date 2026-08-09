@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode 面试 150 进阶精选</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.4rem; border-left: 4px solid #2c5282; padding-left: .5rem; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .9rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .45rem .5rem; text-align: left; vertical-align: top; }
+    th { background: #edf2f7; }
+    tr:nth-child(even) { background: #f7fafc; }
+    a { color: #2c5282; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .diff { display: inline-block; padding: .1rem .4rem; border-radius: 4px; font-size: .8rem; font-weight: 600; }
+    .diff-e { background: #c6f6d5; color: #22543d; }
+    .diff-m { background: #feebc8; color: #744210; }
+    .diff-h { background: #fed7d7; color: #c53030; }
+    .tip { background: #ebf8ff; border-left: 4px solid #4299e1; padding: .75rem 1rem; margin: .8rem 0; border-radius: 0 6px 6px 0; color: #2b6cb0; }
+    .nav { margin-top: 1.5rem; text-align: center; }
+    .nav a { margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LeetCode 面试 150 进阶精选</h1>
+    <p>按分类挑选适合嵌入式/C++ 面试的经典题，附核心思路与重点题 C 代码</p>
+  </header>
+
+  <div class="container">
+    <div class="module">
+      <h2>使用建议</h2>
+      <p>下面的题目全部来自 <a href="https://leetcode.cn/studyplan/top-interview-150/" target="_blank">LeetCode 面试经典 150</a>，按嵌入式面试的常考方向筛选：</p>
+      <ol>
+        <li>优先刷 <strong>数组/字符串、双指针、滑动窗口、链表、栈</strong>（嵌入式手写代码高频）。</li>
+        <li>再补 <strong>二叉树、二分查找、位运算、动态规划</strong>。</li>
+        <li>图/回溯/设计题作为拔高，面试算法岗或互联网大厂时重点看。</li>
+      </ol>
+      <p>每道题给出了题号、难度、考点和核心思路，重点题下方有可直接运行的 C 参考实现。</p>
+    </div>
+
+    <div class="module">
+      <h2>题目分类精选</h2>
+      <table>
+        <tr><th style="width:50px">题号</th><th style="width:220px">题目</th><th style="width:50px">难度</th><th style="width:120px">考点</th><th>核心思路</th></tr>
+
+        <tr><td>88</td><td><a href="https://leetcode.cn/problems/merge-sorted-array/" target="_blank">Merge Sorted Array</a></td><td><span class="diff diff-e">E</span></td><td>数组 / 双指针</td><td>从后往前合并，避免覆盖</td></tr>
+        <tr><td>27</td><td><a href="https://leetcode.cn/problems/remove-element/" target="_blank">Remove Element</a></td><td><span class="diff diff-e">E</span></td><td>数组 / 双指针</td><td>原地覆盖，快慢指针</td></tr>
+        <tr><td>26</td><td><a href="https://leetcode.cn/problems/remove-duplicates-from-sorted-array/" target="_blank">Remove Duplicates from Sorted Array</a></td><td><span class="diff diff-e">E</span></td><td>数组 / 双指针</td><td>快慢指针去重</td></tr>
+        <tr><td>80</td><td><a href="https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/" target="_blank">Remove Duplicates from Sorted Array II</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 双指针</td><td>允许最多两次重复</td></tr>
+        <tr><td>169</td><td><a href="https://leetcode.cn/problems/majority-element/" target="_blank">Majority Element</a></td><td><span class="diff diff-e">E</span></td><td>数组</td><td>摩尔投票法或排序</td></tr>
+        <tr><td>189</td><td><a href="https://leetcode.cn/problems/rotate-array/" target="_blank">Rotate Array</a></td><td><span class="diff diff-m">M</span></td><td>数组</td><td>三次翻转实现轮转</td></tr>
+        <tr><td>121</td><td><a href="https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/" target="_blank">Best Time to Buy and Sell Stock</a></td><td><span class="diff diff-e">E</span></td><td>数组 / DP</td><td>一次遍历，记录历史最小</td></tr>
+        <tr><td>122</td><td><a href="https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank">Best Time to Buy and Sell Stock II</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 贪心</td><td>累加所有上升段</td></tr>
+        <tr><td>55</td><td><a href="https://leetcode.cn/problems/jump-game/" target="_blank">Jump Game</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 贪心</td><td>维护最远可达位置</td></tr>
+        <tr><td>45</td><td><a href="https://leetcode.cn/problems/jump-game-ii/" target="_blank">Jump Game II</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 贪心</td><td>当前步数内最远距离作为下一步边界</td></tr>
+        <tr><td>238</td><td><a href="https://leetcode.cn/problems/product-of-array-except-self/" target="_blank">Product of Array Except Self</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 前缀积</td><td>先算前缀积，再乘后缀积</td></tr>
+        <tr><td>42</td><td><a href="https://leetcode.cn/problems/trapping-rain-water/" target="_blank">Trapping Rain Water</a></td><td><span class="diff diff-h">H</span></td><td>数组 / 双指针</td><td>左右最大高度，向中间夹逼</td></tr>
+
+        <tr><td>14</td><td><a href="https://leetcode.cn/problems/longest-common-prefix/" target="_blank">Longest Common Prefix</a></td><td><span class="diff diff-e">E</span></td><td>字符串</td><td>逐字符比较</td></tr>
+        <tr><td>151</td><td><a href="https://leetcode.cn/problems/reverse-words-in-a-string/" target="_blank">Reverse Words in a String</a></td><td><span class="diff diff-m">M</span></td><td>字符串</td><td>先整体反转，再逐个单词反转</td></tr>
+        <tr><td>28</td><td><a href="https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/" target="_blank">Find the Index of the First Occurrence</a></td><td><span class="diff diff-e">E</span></td><td>字符串 / KMP</td><td>暴力或 KMP 前缀函数</td></tr>
+        <tr><td>125</td><td><a href="https://leetcode.cn/problems/valid-palindrome/" target="_blank">Valid Palindrome</a></td><td><span class="diff diff-e">E</span></td><td>字符串 / 双指针</td><td>跳过非字母数字，向中间比较</td></tr>
+        <tr><td>392</td><td><a href="https://leetcode.cn/problems/is-subsequence/" target="_blank">Is Subsequence</a></td><td><span class="diff diff-e">E</span></td><td>字符串 / 双指针</td><td>双指针匹配子序列</td></tr>
+
+        <tr><td>167</td><td><a href="https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/" target="_blank">Two Sum II - Input Array Is Sorted</a></td><td><span class="diff diff-m">M</span></td><td>双指针</td><td>左右指针，根据和移动</td></tr>
+        <tr><td>11</td><td><a href="https://leetcode.cn/problems/container-with-most-water/" target="_blank">Container With Most Water</a></td><td><span class="diff diff-m">M</span></td><td>双指针</td><td>向内移动短板，保留最大面积</td></tr>
+        <tr><td>15</td><td><a href="https://leetcode.cn/problems/3sum/" target="_blank">3Sum</a></td><td><span class="diff diff-m">M</span></td><td>双指针</td><td>排序后固定一个数，双指针找两数</td></tr>
+
+        <tr><td>209</td><td><a href="https://leetcode.cn/problems/minimum-size-subarray-sum/" target="_blank">Minimum Size Subarray Sum</a></td><td><span class="diff diff-m">M</span></td><td>滑动窗口</td><td>右扩左缩，维护窗口和</td></tr>
+        <tr><td>3</td><td><a href="https://leetcode.cn/problems/longest-substring-without-repeating-characters/" target="_blank">Longest Substring Without Repeating Characters</a></td><td><span class="diff diff-m">M</span></td><td>滑动窗口</td><td>哈希表记录字符最后位置</td></tr>
+        <tr><td>567</td><td><a href="https://leetcode.cn/problems/permutation-in-string/" target="_blank">Permutation in String</a></td><td><span class="diff diff-m">M</span></td><td>滑动窗口</td><td>固定窗口，统计字符频次</td></tr>
+        <tr><td>438</td><td><a href="https://leetcode.cn/problems/find-all-anagrams-in-a-string/" target="_blank">Find All Anagrams in a String</a></td><td><span class="diff diff-m">M</span></td><td>滑动窗口</td><td>字符计数窗口比较</td></tr>
+        <tr><td>76</td><td><a href="https://leetcode.cn/problems/minimum-window-substring/" target="_blank">Minimum Window Substring</a></td><td><span class="diff diff-h">H</span></td><td>滑动窗口</td><td>need/have 计数，右扩左缩</td></tr>
+
+        <tr><td>36</td><td><a href="https://leetcode.cn/problems/valid-sudoku/" target="_blank">Valid Sudoku</a></td><td><span class="diff diff-m">M</span></td><td>数组 / 哈希</td><td>行、列、宫格三次检查</td></tr>
+        <tr><td>54</td><td><a href="https://leetcode.cn/problems/spiral-matrix/" target="_blank">Spiral Matrix</a></td><td><span class="diff diff-m">M</span></td><td>矩阵 / 模拟</td><td>按圈遍历，维护边界</td></tr>
+        <tr><td>48</td><td><a href="https://leetcode.cn/problems/rotate-image/" target="_blank">Rotate Image</a></td><td><span class="diff diff-m">M</span></td><td>矩阵</td><td>先转置，再反转每一行</td></tr>
+        <tr><td>73</td><td><a href="https://leetcode.cn/problems/set-matrix-zeroes/" target="_blank">Set Matrix Zeroes</a></td><td><span class="diff diff-m">M</span></td><td>矩阵</td><td>用第一行/列作为标记</td></tr>
+
+        <tr><td>1</td><td><a href="https://leetcode.cn/problems/two-sum/" target="_blank">Two Sum</a></td><td><span class="diff diff-e">E</span></td><td>哈希表</td><td>一次遍历，哈希查补数</td></tr>
+        <tr><td>49</td><td><a href="https://leetcode.cn/problems/group-anagrams/" target="_blank">Group Anagrams</a></td><td><span class="diff diff-m">M</span></td><td>哈希 / 字符串</td><td>排序字符串作为 key</td></tr>
+        <tr><td>128</td><td><a href="https://leetcode.cn/problems/longest-consecutive-sequence/" target="_blank">Longest Consecutive Sequence</a></td><td><span class="diff diff-m">M</span></td><td>哈希</td><td>只从序列起点开始扩展</td></tr>
+        <tr><td>217</td><td><a href="https://leetcode.cn/problems/contains-duplicate/" target="_blank">Contains Duplicate</a></td><td><span class="diff diff-e">E</span></td><td>哈希 / 排序</td><td>集合去重或排序相邻比较</td></tr>
+
+        <tr><td>56</td><td><a href="https://leetcode.cn/problems/merge-intervals/" target="_blank">Merge Intervals</a></td><td><span class="diff diff-m">M</span></td><td>区间</td><td>按起点排序，依次合并</td></tr>
+        <tr><td>228</td><td><a href="https://leetcode.cn/problems/summary-ranges/" target="_blank">Summary Ranges</a></td><td><span class="diff diff-e">E</span></td><td>区间</td><td>连续数字合并成范围</td></tr>
+
+        <tr><td>20</td><td><a href="https://leetcode.cn/problems/valid-parentheses/" target="_blank">Valid Parentheses</a></td><td><span class="diff diff-e">E</span></td><td>栈</td><td>左括号入栈，右括号匹配出栈</td></tr>
+        <tr><td>71</td><td><a href="https://leetcode.cn/problems/simplify-path/" target="_blank">Simplify Path</a></td><td><span class="diff diff-m">M</span></td><td>栈 / 字符串</td><td>按 / 切分，处理 . 和 ..</td></tr>
+        <tr><td>155</td><td><a href="https://leetcode.cn/problems/min-stack/" target="_blank">Min Stack</a></td><td><span class="diff diff-m">M</span></td><td>栈 / 设计</td><td>辅助栈同步保存最小值</td></tr>
+        <tr><td>150</td><td><a href="https://leetcode.cn/problems/evaluate-reverse-polish-notation/" target="_blank">Evaluate Reverse Polish Notation</a></td><td><span class="diff diff-m">M</span></td><td>栈</td><td>遇到数字入栈，运算符弹出两个运算</td></tr>
+
+        <tr><td>21</td><td><a href="https://leetcode.cn/problems/merge-two-sorted-lists/" target="_blank">Merge Two Sorted Lists</a></td><td><span class="diff diff-e">E</span></td><td>链表</td><td>dummy 节点，逐个拼接</td></tr>
+        <tr><td>206</td><td><a href="https://leetcode.cn/problems/reverse-linked-list/" target="_blank">Reverse Linked List</a></td><td><span class="diff diff-e">E</span></td><td>链表</td><td>三指针迭代</td></tr>
+        <tr><td>141</td><td><a href="https://leetcode.cn/problems/linked-list-cycle/" target="_blank">Linked List Cycle</a></td><td><span class="diff diff-e">E</span></td><td>链表 / 双指针</td><td>快慢指针</td></tr>
+        <tr><td>19</td><td><a href="https://leetcode.cn/problems/remove-nth-node-from-end-of-list/" target="_blank">Remove Nth Node From End of List</a></td><td><span class="diff diff-m">M</span></td><td>链表 / 双指针</td><td>先走 n 步，再同步前进</td></tr>
+        <tr><td>2</td><td><a href="https://leetcode.cn/problems/add-two-numbers/" target="_blank">Add Two Numbers</a></td><td><span class="diff diff-m">M</span></td><td>链表</td><td>模拟逐位相加，处理进位</td></tr>
+        <tr><td>142</td><td><a href="https://leetcode.cn/problems/linked-list-cycle-ii/" target="_blank">Linked List Cycle II</a></td><td><span class="diff diff-m">M</span></td><td>链表 / 数学</td><td>相遇后一个回到头，再同步走</td></tr>
+        <tr><td>146</td><td><a href="https://leetcode.cn/problems/lru-cache/" target="_blank">LRU Cache</a></td><td><span class="diff diff-m">M</span></td><td>设计 / Hash + 双向链表</td><td>Hash 查找，双向链表维护使用顺序</td></tr>
+
+        <tr><td>104</td><td><a href="https://leetcode.cn/problems/maximum-depth-of-binary-tree/" target="_blank">Maximum Depth of Binary Tree</a></td><td><span class="diff diff-e">E</span></td><td>二叉树</td><td>递归取左右最大深度</td></tr>
+        <tr><td>100</td><td><a href="https://leetcode.cn/problems/same-tree/" target="_blank">Same Tree</a></td><td><span class="diff diff-e">E</span></td><td>二叉树</td><td>递归比较值和左右子树</td></tr>
+        <tr><td>226</td><td><a href="https://leetcode.cn/problems/invert-binary-tree/" target="_blank">Invert Binary Tree</a></td><td><span class="diff diff-e">E</span></td><td>二叉树</td><td>递归交换左右子树</td></tr>
+        <tr><td>101</td><td><a href="https://leetcode.cn/problems/symmetric-tree/" target="_blank">Symmetric Tree</a></td><td><span class="diff diff-e">E</span></td><td>二叉树</td><td>递归比较镜像节点</td></tr>
+        <tr><td>102</td><td><a href="https://leetcode.cn/problems/binary-tree-level-order-traversal/" target="_blank">Binary Tree Level Order Traversal</a></td><td><span class="diff diff-m">M</span></td><td>二叉树 / BFS</td><td>队列按层出队</td></tr>
+        <tr><td>105</td><td><a href="https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/" target="_blank">Construct Binary Tree from Preorder and Inorder</a></td><td><span class="diff diff-m">M</span></td><td>二叉树</td><td>前序找根，中序分左右，递归</td></tr>
+        <tr><td>236</td><td><a href="https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/" target="_blank">Lowest Common Ancestor of a Binary Tree</a></td><td><span class="diff diff-m">M</span></td><td>二叉树</td><td>递归，p/q 在两侧则当前为 LCA</td></tr>
+        <tr><td>124</td><td><a href="https://leetcode.cn/problems/binary-tree-maximum-path-sum/" target="_blank">Binary Tree Maximum Path Sum</a></td><td><span class="diff diff-h">H</span></td><td>二叉树 / DP</td><td>递归返回单边最大，全局更新跨左右路径</td></tr>
+        <tr><td>297</td><td><a href="https://leetcode.cn/problems/serialize-and-deserialize-binary-tree/" target="_blank">Serialize and Deserialize Binary Tree</a></td><td><span class="diff diff-h">H</span></td><td>二叉树 / 设计</td><td>前序/层序 + 占位符</td></tr>
+
+        <tr><td>35</td><td><a href="https://leetcode.cn/problems/search-insert-position/" target="_blank">Search Insert Position</a></td><td><span class="diff diff-e">E</span></td><td>二分查找</td><td>标准二分，记录插入位置</td></tr>
+        <tr><td>74</td><td><a href="https://leetcode.cn/problems/search-a-2d-matrix/" target="_blank">Search a 2D Matrix</a></td><td><span class="diff diff-m">M</span></td><td>二分查找</td><td>二维转一维或右上角/左下角</td></tr>
+        <tr><td>33</td><td><a href="https://leetcode.cn/problems/search-in-rotated-sorted-array/" target="_blank">Search in Rotated Sorted Array</a></td><td><span class="diff diff-m">M</span></td><td>二分查找</td><td>判断哪一半有序</td></tr>
+        <tr><td>153</td><td><a href="https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/" target="_blank">Find Minimum in Rotated Sorted Array</a></td><td><span class="diff diff-m">M</span></td><td>二分查找</td><td>比较 mid 和 right 缩小区间</td></tr>
+        <tr><td>4</td><td><a href="https://leetcode.cn/problems/median-of-two-sorted-arrays/" target="_blank">Median of Two Sorted Arrays</a></td><td><span class="diff diff-h">H</span></td><td>二分查找</td><td>划分数组，使左右元素数相等</td></tr>
+
+        <tr><td>17</td><td><a href="https://leetcode.cn/problems/letter-combinations-of-a-phone-number/" target="_blank">Letter Combinations of a Phone Number</a></td><td><span class="diff diff-m">M</span></td><td>回溯</td><td>数字对应字符，DFS 组合</td></tr>
+        <tr><td>46</td><td><a href="https://leetcode.cn/problems/permutations/" target="_blank">Permutations</a></td><td><span class="diff diff-m">M</span></td><td>回溯</td><td>递归枚举每个位置元素</td></tr>
+        <tr><td>78</td><td><a href="https://leetcode.cn/problems/subsets/" target="_blank">Subsets</a></td><td><span class="diff diff-m">M</span></td><td>回溯 / 位运算</td><td>每个元素选或不选</td></tr>
+        <tr><td>39</td><td><a href="https://leetcode.cn/problems/combination-sum/" target="_blank">Combination Sum</a></td><td><span class="diff diff-m">M</span></td><td>回溯</td><td>排序后 DFS，允许重复选</td></tr>
+
+        <tr><td>200</td><td><a href="https://leetcode.cn/problems/number-of-islands/" target="_blank">Number of Islands</a></td><td><span class="diff diff-m">M</span></td><td>图 / DFS/BFS</td><td>每遇到 1 计数并淹没连通区域</td></tr>
+        <tr><td>133</td><td><a href="https://leetcode.cn/problems/clone-graph/" target="_blank">Clone Graph</a></td><td><span class="diff diff-m">M</span></td><td>图 / DFS/BFS</td><td>哈希表保存已克隆节点</td></tr>
+        <tr><td>207</td><td><a href="https://leetcode.cn/problems/course-schedule/" target="_blank">Course Schedule</a></td><td><span class="diff diff-m">M</span></td><td>图 / 拓扑排序</td><td>检测有向图是否有环</td></tr>
+        <tr><td>210</td><td><a href="https://leetcode.cn/problems/course-schedule-ii/" target="_blank">Course Schedule II</a></td><td><span class="diff diff-m">M</span></td><td>图 / 拓扑排序</td><td>Kahn 算法或 DFS 后序</td></tr>
+
+        <tr><td>70</td><td><a href="https://leetcode.cn/problems/climbing-stairs/" target="_blank">Climbing Stairs</a></td><td><span class="diff diff-e">E</span></td><td>DP</td><td>f(n)=f(n-1)+f(n-2)</td></tr>
+        <tr><td>198</td><td><a href="https://leetcode.cn/problems/house-robber/" target="_blank">House Robber</a></td><td><span class="diff diff-m">M</span></td><td>DP</td><td>偷或不偷当前，取最大</td></tr>
+        <tr><td>322</td><td><a href="https://leetcode.cn/problems/coin-change/" target="_blank">Coin Change</a></td><td><span class="diff diff-m">M</span></td><td>DP</td><td>完全背包，dp[i] = min(dp[i-coin]+1)</td></tr>
+        <tr><td>300</td><td><a href="https://leetcode.cn/problems/longest-increasing-subsequence/" target="_blank">Longest Increasing Subsequence</a></td><td><span class="diff diff-m">M</span></td><td>DP / 二分</td><td>dp[i] 以 i 结尾的最长子序列</td></tr>
+        <tr><td>1143</td><td><a href="https://leetcode.cn/problems/longest-common-subsequence/" target="_blank">Longest Common Subsequence</a></td><td><span class="diff diff-m">M</span></td><td>DP</td><td>相等 dp[i-1][j-1]+1，否则 max</td></tr>
+        <tr><td>72</td><td><a href="https://leetcode.cn/problems/edit-distance/" target="_blank">Edit Distance</a></td><td><span class="diff diff-h">H</span></td><td>DP</td><td>增删替换的代价取最小</td></tr>
+        <tr><td>62</td><td><a href="https://leetcode.cn/problems/unique-paths/" target="_blank">Unique Paths</a></td><td><span class="diff diff-m">M</span></td><td>DP</td><td>dp[i][j] = dp[i-1][j] + dp[i][j-1]</td></tr>
+
+        <tr><td>136</td><td><a href="https://leetcode.cn/problems/single-number/" target="_blank">Single Number</a></td><td><span class="diff diff-e">E</span></td><td>位运算</td><td>异或</td></tr>
+        <tr><td>191</td><td><a href="https://leetcode.cn/problems/number-of-1-bits/" target="_blank">Number of 1 Bits</a></td><td><span class="diff diff-e">E</span></td><td>位运算</td><td>n &= n - 1 清除最低位 1</td></tr>
+        <tr><td>190</td><td><a href="https://leetcode.cn/problems/reverse-bits/" target="_blank">Reverse Bits</a></td><td><span class="diff diff-e">E</span></td><td>位运算</td><td>逐位取出并反向填入</td></tr>
+        <tr><td>268</td><td><a href="https://leetcode.cn/problems/missing-number/" target="_blank">Missing Number</a></td><td><span class="diff diff-e">E</span></td><td>位运算 / 数学</td><td>异或或求和差</td></tr>
+        <tr><td>137</td><td><a href="https://leetcode.cn/problems/single-number-ii/" target="_blank">Single Number II</a></td><td><span class="diff diff-m">M</span></td><td>位运算</td><td>统计每一位 1 的个数，模 3</td></tr>
+
+        <tr><td>9</td><td><a href="https://leetcode.cn/problems/palindrome-number/" target="_blank">Palindrome Number</a></td><td><span class="diff diff-e">E</span></td><td>数学</td><td>反转一半数字</td></tr>
+        <tr><td>50</td><td><a href="https://leetcode.cn/problems/powx-n/" target="_blank">Pow(x, n)</a></td><td><span class="diff diff-m">M</span></td><td>数学 / 递归</td><td>快速幂，注意 n 为负</td></tr>
+        <tr><td>69</td><td><a href="https://leetcode.cn/problems/sqrtx/" target="_blank">Sqrt(x)</a></td><td><span class="diff diff-e">E</span></td><td>数学 / 二分</td><td>二分找最大 mid 使 mid*mid <= x</td></tr>
+      </table>
+    </div>
+
+    <div class="module">
+      <h2>重点题 C 参考实现</h2>
+
+      <h3>15. 3Sum</h3>
+      <p>排序后固定一个数，双指针找和为 0 的两数，注意去重。</p>
+      <pre><code>int cmp(const void *a, const void *b) {
+    return *(int *)a - *(int *)b;
+}
+
+void threeSum(int *nums, int n) {
+    qsort(nums, n, sizeof(int), cmp);
+    for (int i = 0; i < n - 2; i++) {
+        if (i > 0 && nums[i] == nums[i - 1]) continue;
+        int l = i + 1, r = n - 1;
+        while (l < r) {
+            int sum = nums[i] + nums[l] + nums[r];
+            if (sum == 0) {
+                printf("%d %d %d\n", nums[i], nums[l], nums[r]);
+                while (l < r && nums[l] == nums[l + 1]) l++;
+                while (l < r && nums[r] == nums[r - 1]) r--;
+                l++; r--;
+            } else if (sum < 0) {
+                l++;
+            } else {
+                r--;
+            }
+        }
+    }
+}</code></pre>
+
+      <h3>42. Trapping Rain Water</h3>
+      <p>双指针从两端向中间移动，分别维护左右最高高度。</p>
+      <pre><code>int trap(int *height, int n) {
+    int l = 0, r = n - 1;
+    int lmax = 0, rmax = 0, res = 0;
+    while (l < r) {
+        if (height[l] < height[r]) {
+            if (height[l] >= lmax) lmax = height[l];
+            else res += lmax - height[l];
+            l++;
+        } else {
+            if (height[r] >= rmax) rmax = height[r];
+            else res += rmax - height[r];
+            r--;
+        }
+    }
+    return res;
+}</code></pre>
+
+      <h3>33. Search in Rotated Sorted Array</h3>
+      <p>二分查找，判断 mid 所在的有序半边。</p>
+      <pre><code>int search(int *nums, int n, int target) {
+    int l = 0, r = n - 1;
+    while (l <= r) {
+        int m = l + (r - l) / 2;
+        if (nums[m] == target) return m;
+        if (nums[l] <= nums[m]) {
+            if (target >= nums[l] && target < nums[m])
+                r = m - 1;
+            else
+                l = m + 1;
+        } else {
+            if (target > nums[m] && target <= nums[r])
+                l = m + 1;
+            else
+                r = m - 1;
+        }
+    }
+    return -1;
+}</code></pre>
+
+      <h3>200. Number of Islands</h3>
+      <p>DFS 遇到 1 就淹没整个连通区域。</p>
+      <pre><code>void dfs(char **grid, int m, int n, int i, int j) {
+    if (i < 0 || i >= m || j < 0 || j >= n || grid[i][j] != '1')
+        return;
+    grid[i][j] = '0';
+    dfs(grid, m, n, i + 1, j);
+    dfs(grid, m, n, i - 1, j);
+    dfs(grid, m, n, i, j + 1);
+    dfs(grid, m, n, i, j - 1);
+}
+
+int numIslands(char **grid, int m, int n) {
+    int cnt = 0;
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+            if (grid[i][j] == '1') {
+                cnt++;
+                dfs(grid, m, n, i, j);
+            }
+    return cnt;
+}</code></pre>
+
+      <h3>76. Minimum Window Substring</h3>
+      <p>滑动窗口，need 计数和 have 计数，右扩左缩。</p>
+      <pre><code>char *minWindow(char *s, char *t) {
+    int need[128] = {0}, have[128] = {0};
+    int required = 0, formed = 0;
+    for (char *p = t; *p; p++) {
+        if (need[(unsigned char)*p] == 0) required++;
+        need[(unsigned char)*p]++;
+    }
+
+    int start = 0, len = 0x7fffffff;
+    int l = 0;
+    for (int r = 0; s[r]; r++) {
+        char c = s[r];
+        have[(unsigned char)c]++;
+        if (have[(unsigned char)c] == need[(unsigned char)c]) formed++;
+
+        while (formed == required) {
+            if (r - l + 1 < len) {
+                start = l;
+                len = r - l + 1;
+            }
+            char left = s[l];
+            have[(unsigned char)left]--;
+            if (have[(unsigned char)left] < need[(unsigned char)left])
+                formed--;
+            l++;
+        }
+    }
+    if (len == 0x7fffffff) {
+        char *empty = malloc(1);
+        empty[0] = '\0';
+        return empty;
+    }
+    char *res = malloc(len + 1);
+    memcpy(res, s + start, len);
+    res[len] = '\0';
+    return res;
+}</code></pre>
+
+      <h3>1143. Longest Common Subsequence</h3>
+      <p>二维 DP，相等时左上 +1，否则取左/上最大值。</p>
+      <pre><code>int longestCommonSubsequence(char *a, char *b) {
+    int m = strlen(a), n = strlen(b);
+    int dp[m + 1][n + 1];
+    memset(dp, 0, sizeof(dp));
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (a[i - 1] == b[j - 1])
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            else
+                dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
+        }
+    }
+    return dp[m][n];
+}</code></pre>
+
+      <h3>322. Coin Change</h3>
+      <p>完全背包，dp[i] 表示凑成金额 i 所需最少硬币数。</p>
+      <pre><code>int coinChange(int *coins, int n, int amount) {
+    int dp[amount + 1];
+    for (int i = 0; i <= amount; i++) dp[i] = amount + 1;
+    dp[0] = 0;
+    for (int i = 1; i <= amount; i++) {
+        for (int j = 0; j < n; j++) {
+            if (coins[j] <= i) {
+                int cand = dp[i - coins[j]] + 1;
+                if (cand < dp[i]) dp[i] = cand;
+            }
+        }
+    }
+    return dp[amount] > amount ? -1 : dp[amount];
+}</code></pre>
+
+      <h3>146. LRU Cache（设计思路 + 参考结构）</h3>
+      <p>Hash 表用于 O(1) 查找，双向链表维护使用顺序。get/put 时把节点移到头部；容量满时淘汰尾部。</p>
+      <pre><code>typedef struct Node {
+    int key, val;
+    struct Node *prev, *next;
+} Node;
+
+// 建议实现：
+// 1. 初始化 dummy 头尾节点，首尾相连。
+// 2. get(key)：hash 找节点，移到头部，返回值；不存在返回 -1。
+// 3. put(key, val)：若存在则更新并移到头部；不存在则新建插入头部，
+//    若超过容量，删除尾部节点并从 hash 移除。
+// 4. 移动/删除/插入均用双向链表操作，保持 O(1)。</code></pre>
+    </div>
+
+    <div class="module">
+      <h2>刷题顺序建议</h2>
+      <ol>
+        <li><strong>第一阶段（基础不丢分）</strong>：数组/字符串 E/M、双指针、滑动窗口、链表、栈。</li>
+        <li><strong>第二阶段（高频中档）</strong>：二叉树、二分查找、位运算、字符串算法、简单 DP。</li>
+        <li><strong>第三阶段（拔高）</strong>：图 BFS/DFS、拓扑排序、回溯、复杂 DP、设计题。</li>
+      </ol>
+      <div class="tip">嵌入式面试更关注指针、数组边界、内存安全和代码熟练度；前两个阶段建议能“闭卷手撕”。</div>
+    </div>
+
+    <div class="nav">
+      <a href="algorithm_practice.html">← 基础手撕练习</a>
+      <a href="index.html">返回课程目录</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>嵌入式开发工程师 · 面试课程</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0;
+      background: #f5f7fa;
+      color: #2c3e50;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.6rem; }
+    header p { margin: .5rem 0 0; opacity: .9; font-size: .95rem; }
+    .container { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    .day { margin-bottom: 2rem; }
+    .day-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+      color: #1e3a5f;
+      border-left: 5px solid #2c5282;
+      padding-left: .75rem;
+    }
+    .lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      text-decoration: none;
+      color: inherit;
+      transition: transform .15s, box-shadow .15s;
+      border: 1px solid #e2e8f0;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0,0,0,.12); }
+    .card h3 { margin: 0 0 .4rem; font-size: 1rem; color: #2c5282; }
+    .card p { margin: 0; font-size: .9rem; color: #4a5568; }
+    .card.disabled { pointer-events: none; opacity: .6; }
+    .tag {
+      display: inline-block;
+      font-size: .7rem;
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      background: #edf2f7;
+      color: #4a5568;
+      margin-top: .5rem;
+    }
+    .tag.ready { background: #c6f6d5; color: #22543d; }
+    footer { text-align: center; padding: 2rem; font-size: .85rem; color: #718096; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>嵌入式开发工程师 · 面试特训课程</h1>
+    <p>目标岗位：字节跳动 - 嵌入式开发工程师（移动OS）</p>
+  </header>
+  <div class="container">
+    <div class="day">
+      <div class="day-title">D1 · C 语言与内存</div>
+      <div class="lessons">
+        <a class="card" href="L1_memory_lifecycle.html">
+          <h3>L1 内存与生命周期</h3>
+          <p>地址空间、栈 vs 堆、野指针、内存泄漏</p>
+          <span class="tag ready">已上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L2 存储布局</h3>
+          <p>内存碎片、对齐、struct/union、位域</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L3 标识符与编译</h3>
+          <p>static、extern、宏与类型、编译四阶段</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L4 C 杂项</h3>
+          <p>sizeof/strlen、函数指针、内联、中断函数</p>
+          <span class="tag">待上线</span>
+        </a>
+      </div>
+    </div>
+    <div class="day">
+      <div class="day-title">D2 · 操作系统与并发</div>
+      <div class="lessons">
+        <a class="card disabled" href="#">
+          <h3>L5 内核与进程</h3>
+          <p>内核/用户态、进程/线程、fork 与 COW</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L6 进程状态与虚存</h3>
+          <p>僵尸/孤儿/守护、虚拟内存、缺页、mmap</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L7 并发与同步</h3>
+          <p>三种锁、中断上下文、原子操作、SMP</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L8 工具链与硬件</h3>
+          <p>交叉编译、动静态库、DMA/cache、左值右值</p>
+          <span class="tag">待上线</span>
+        </a>
+      </div>
+    </div>
+    <div class="day">
+      <div class="day-title">D3 · C++ 与综合</div>
+      <div class="lessons">
+        <a class="card disabled" href="#">
+          <h3>L9 C++ 核心</h3>
+          <p>struct/class、构造析构、虚函数、RAII 与智能指针</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L10 调试与性能</h3>
+          <p>coredump+gdb、addr2line、perf</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L11 协议与手写</h3>
+          <p>TCP 可靠性、OSI、状态机、手撕基础函数/栈</p>
+          <span class="tag">待上线</span>
+        </a>
+        <a class="card disabled" href="#">
+          <h3>L12 口述串讲</h3>
+          <p>内存三题一张图、进程/线程/锁复习</p>
+          <span class="tag">待上线</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  <footer>学习路径：完成一课小测后，根据得分决定进入下一课或巩固复习。</footer>
+</body>
+</html>

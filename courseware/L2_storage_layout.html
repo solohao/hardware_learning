@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L2 存储布局</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L2 存储布局</h1>
+    <p>内存碎片 · 内存对齐 · struct vs union · 位域</p>
+  </header>
+
+  <div class="container">
+    <!-- 模块 1 -->
+    <div class="module">
+      <h2>1. 内存碎片</h2>
+      <p>动态分配的堆中，已释放的内存块如果大小不一、位置分散，就可能出现“总空闲足够，但连不起来”的情况，这就是 <strong>外部碎片</strong>。</p>
+      <div class="diagram">
+        <svg width="540" height="280" viewBox="0 0 540 280">
+          <text x="270" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">初始连续分配</text>
+          <rect x="30" y="40" width="100" height="40" fill="#4299e1" rx="5"/><text x="80" y="65" text-anchor="middle" fill="#fff" font-size="12">A 50B</text>
+          <rect x="140" y="40" width="100" height="40" fill="#4299e1" rx="5"/><text x="190" y="65" text-anchor="middle" fill="#fff" font-size="12">B 50B</text>
+          <rect x="250" y="40" width="100" height="40" fill="#4299e1" rx="5"/><text x="300" y="65" text-anchor="middle" fill="#fff" font-size="12">C 50B</text>
+          <rect x="360" y="40" width="100" height="40" fill="#4299e1" rx="5"/><text x="410" y="65" text-anchor="middle" fill="#fff" font-size="12">D 50B</text>
+
+          <text x="270" y="115" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">释放 B 和 D</text>
+          <rect x="30" y="130" width="100" height="40" fill="#4299e1" rx="5"/><text x="80" y="155" text-anchor="middle" fill="#fff" font-size="12">A 50B</text>
+          <rect x="140" y="130" width="100" height="40" fill="#a0aec0" rx="5"/><text x="190" y="155" text-anchor="middle" fill="#fff" font-size="12">free 50B</text>
+          <rect x="250" y="130" width="100" height="40" fill="#4299e1" rx="5"/><text x="300" y="155" text-anchor="middle" fill="#fff" font-size="12">C 50B</text>
+          <rect x="360" y="130" width="100" height="40" fill="#a0aec0" rx="5"/><text x="410" y="155" text-anchor="middle" fill="#fff" font-size="12">free 50B</text>
+
+          <text x="270" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">申请 80B 失败</text>
+          <rect x="30" y="220" width="100" height="40" fill="#4299e1" rx="5"/><text x="80" y="245" text-anchor="middle" fill="#fff" font-size="12">A 50B</text>
+          <rect x="140" y="220" width="100" height="40" fill="#a0aec0" rx="5"/><text x="190" y="245" text-anchor="middle" fill="#fff" font-size="12">50B</text>
+          <rect x="250" y="220" width="100" height="40" fill="#4299e1" rx="5"/><text x="300" y="245" text-anchor="middle" fill="#fff" font-size="12">C 50B</text>
+          <rect x="360" y="220" width="100" height="40" fill="#a0aec0" rx="5"/><text x="410" y="245" text-anchor="middle" fill="#fff" font-size="12">50B</text>
+          <text x="270" y="275" text-anchor="middle" font-size="12" fill="#c53030">空闲总计 100B，但没有连续 80B 可用</text>
+        </svg>
+      </div>
+      <ul>
+        <li><strong>外部碎片</strong>：堆中散落的小空闲块总和够大，但都不连续，导致大块分配失败。</li>
+        <li><strong>内部碎片</strong>：分配器给用户的块比实际请求大（对齐、管理头等），多余部分在块内浪费。</li>
+        <li>嵌入式中常用固定大小内存池、slab 分配器来减少碎片。</li>
+      </ul>
+      <div class="quiz" id="q1">
+        <h4>快速检查</h4>
+        <p>“总空闲内存够，但没有连续大段空间”描述的是哪种碎片？</p>
+        <button class="option" data-c="1" onclick="check(this, true)">A. 外部碎片</button>
+        <button class="option" data-c="0" onclick="check(this, false)">B. 内部碎片</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. 栈溢出</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 缓存未命中</button>
+        <div class="feedback">这是外部碎片：空闲总量足够，但被已分配块隔开，无法合并。</div>
+      </div>
+    </div>
+
+    <!-- 模块 2 -->
+    <div class="module">
+      <h2>2. 内存对齐</h2>
+      <p>CPU 按固定字节数（如 4、8）读取内存。若一个 int 从奇数地址开始，可能跨两次总线访问，某些架构甚至直接触发异常。</p>
+      <div class="diagram">
+        <svg width="460" height="240" viewBox="0 0 460 240">
+          <text x="230" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">对齐访问 vs 未对齐访问</text>
+
+          <text x="80" y="55" text-anchor="middle" font-size="13" fill="#276749">对齐 int（地址 0）</text>
+          <rect x="20" y="70" width="60" height="40" fill="#c6f6d5" stroke="#276749" rx="3"/>
+          <text x="50" y="95" text-anchor="middle" font-size="12" fill="#22543d">int 4B</text>
+          <text x="50" y="120" text-anchor="middle" font-size="11" fill="#718096">一次读 0-3</text>
+
+          <text x="350" y="55" text-anchor="middle" font-size="13" fill="#c53030">未对齐 int（地址 1）</text>
+          <rect x="290" y="70" width="20" height="40" fill="#fed7d7" stroke="#c53030" rx="3"/>
+          <rect x="320" y="70" width="60" height="40" fill="#fed7d7" stroke="#c53030" rx="3"/>
+          <rect x="390" y="70" width="20" height="40" fill="#fed7d7" stroke="#c53030" rx="3"/>
+          <text x="350" y="120" text-anchor="middle" font-size="11" fill="#718096">可能跨两次读取</text>
+
+          <text x="230" y="165" text-anchor="middle" font-size="13" font-weight="600" fill="#2c5282">struct 自动补齐</text>
+          <rect x="80" y="180" width="50" height="35" fill="#ed8936" rx="3"/><text x="105" y="202" text-anchor="middle" fill="#fff" font-size="11">char</text>
+          <rect x="130" y="180" width="90" height="35" fill="#a0aec0" rx="3"/><text x="175" y="202" text-anchor="middle" fill="#fff" font-size="11">pad 3B</text>
+          <rect x="220" y="180" width="120" height="35" fill="#4299e1" rx="3"/><text x="280" y="202" text-anchor="middle" fill="#fff" font-size="11">int 4B</text>
+          <text x="230" y="235" text-anchor="middle" font-size="12" fill="#4a5568">struct { char c; int i; } 通常占 8 字节</text>
+        </svg>
+      </div>
+      <ul>
+        <li>对齐值：多数 32 位系统 int 对齐到 4 字节，64 位指针/double 对齐到 8 字节。</li>
+        <li>编译器会在 struct 成员间插入填充字节（padding），让各成员对齐。</li>
+        <li>可用 <code>#pragma pack</code> 或 <code>__attribute__((packed))</code> 取消/改变对齐，以空间换速度或避免协议解析错误。</li>
+      </ul>
+      <div class="quiz" id="q2">
+        <h4>快速检查</h4>
+        <p>内存对齐的主要目的是什么？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 让代码更短</button>
+        <button class="option" data-c="1" onclick="check(this, true)">B. 提高 CPU 访问效率并避免未对齐异常</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. 减小可执行文件体积</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 让指针占用更多字节</button>
+        <div class="feedback">对齐让 CPU 一次读出完整数据，部分嵌入式架构对未对齐访问会直接报错。</div>
+      </div>
+    </div>
+
+    <!-- 模块 3 -->
+    <div class="module">
+      <h2>3. struct vs union</h2>
+      <p>struct 把多个成员“排排坐”，union 让多个成员“共享同一块内存”。</p>
+      <div class="diagram">
+        <svg width="480" height="280" viewBox="0 0 480 280">
+          <text x="130" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">struct</text>
+          <text x="350" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">union</text>
+
+          <rect x="70" y="40" width="120" height="35" fill="#ed8936" rx="4"/><text x="130" y="62" text-anchor="middle" fill="#fff" font-size="12">char c (1B)</text>
+          <rect x="70" y="75" width="120" height="35" fill="#a0aec0" rx="4"/><text x="130" y="97" text-anchor="middle" fill="#fff" font-size="12">pad 3B</text>
+          <rect x="70" y="110" width="120" height="55" fill="#4299e1" rx="4"/><text x="130" y="138" text-anchor="middle" fill="#fff" font-size="12">int i (4B)</text>
+          <text x="130" y="190" text-anchor="middle" font-size="13" fill="#4a5568">各成员独立，顺序存放</text>
+          <text x="130" y="210" text-anchor="middle" font-size="13" fill="#4a5568">大小 ≥ 各成员之和</text>
+
+          <rect x="290" y="40" width="120" height="90" fill="#805ad5" rx="4"/>
+          <text x="350" y="70" text-anchor="middle" fill="#fff" font-size="12">char c</text>
+          <text x="350" y="95" text-anchor="middle" fill="#fff" font-size="12">int i</text>
+          <text x="350" y="120" text-anchor="middle" fill="#fff" font-size="12">double d</text>
+          <text x="350" y="145" text-anchor="middle" fill="#fff" font-size="11">共享同一块内存</text>
+          <text x="350" y="190" text-anchor="middle" font-size="13" fill="#4a5568">同时只能有效使用一个成员</text>
+          <text x="350" y="210" text-anchor="middle" font-size="13" fill="#4a5568">大小 = 最大成员</text>
+
+          <text x="240" y="255" text-anchor="middle" font-size="12" fill="#718096">struct 用于打包多个字段；union 用于互斥的多种解释（如寄存器/协议字段）</text>
+        </svg>
+      </div>
+      <pre><code>struct S {
+    char c;   // 1B
+    int i;    // 4B（对齐后通常 char 后补 3B）
+};
+
+union U {
+    char c;
+    int i;
+    double d; // 最大成员决定 union 大小
+};</code></pre>
+      <ul>
+        <li><code>struct</code>：所有成员同时存在，内存依次排列，可能有 padding。</li>
+        <li><code>union</code>：所有成员共享起始地址，写入一个成员后再读另一个成员会得到未定义解释。</li>
+      </ul>
+      <div class="quiz" id="q3">
+        <h4>快速检查</h4>
+        <p>在 64 位系统上，`union { char c; int i; double d; }` 的大小通常是多少？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 1</button>
+        <button class="option" data-c="0" onclick="check(this, false)">B. 4</button>
+        <button class="option" data-c="1" onclick="check(this, true)">C. 8</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 13</button>
+        <div class="feedback">union 大小由最大成员决定；double 通常为 8 字节，所以 union 占 8 字节。</div>
+      </div>
+    </div>
+
+    <!-- 模块 4 -->
+    <div class="module">
+      <h2>4. 位域</h2>
+      <p>位域允许把 struct 成员精确指定到若干 bit，常用于寄存器映射、协议标志位等内存紧张的场合。</p>
+      <pre><code>struct Flags {
+    unsigned int power : 1;  // 0/1
+    unsigned int mode  : 3;  // 0-7
+    unsigned int       : 4;  // 保留 4bit
+    unsigned int status: 8;
+};</code></pre>
+      <div class="diagram">
+        <svg width="520" height="120" viewBox="0 0 520 120">
+          <rect x="30" y="30" width="460" height="50" fill="#edf2f7" stroke="#4a5568" rx="4"/>
+          <line x1="95" y1="30" x2="95" y2="80" stroke="#4a5568"/>
+          <line x1="265" y1="30" x2="265" y2="80" stroke="#4a5568"/>
+          <line x1="355" y1="30" x2="355" y2="80" stroke="#4a5568"/>
+          <text x="62" y="58" text-anchor="middle" font-size="13" fill="#2c5282">power 1b</text>
+          <text x="180" y="58" text-anchor="middle" font-size="13" fill="#2c5282">mode 3b</text>
+          <text x="310" y="58" text-anchor="middle" font-size="13" fill="#2c5282">保留 4b</text>
+          <text x="407" y="58" text-anchor="middle" font-size="13" fill="#2c5282">status 8b</text>
+          <text x="260" y="105" text-anchor="middle" font-size="12" fill="#718096">一个 unsigned int 内的位域排布（具体顺序取决于编译器/字节序）</text>
+        </svg>
+      </div>
+      <ul>
+        <li><code>:</code> 后面的数字表示该成员占几个 bit。</li>
+        <li>位域的大小、排布（从高位还是低位开始）由编译器决定，跨平台时要谨慎。</li>
+        <li>不能对位域取地址（<code>&amp;f.power</code> 非法），因为它可能不占用完整字节。</li>
+      </ul>
+      <div class="quiz" id="q4">
+        <h4>快速检查</h4>
+        <p><code>unsigned int a : 3;</code> 最多能表示多少个不同值？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 3</button>
+        <button class="option" data-c="0" onclick="check(this, false)">B. 7</button>
+        <button class="option" data-c="1" onclick="check(this, true)">C. 8（0-7）</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 2^32</button>
+        <div class="feedback">3 个 bit 可表示 2^3 = 8 个不同值，范围 0~7。</div>
+      </div>
+    </div>
+
+    <!-- 模块 5 -->
+    <div class="module">
+      <h2>5. 综合练习：struct 大小计算</h2>
+      <p>下面这个结构体在 64 位 GCC 上通常占多少字节？</p>
+      <pre><code>struct Example {
+    char  a;   // 1
+    int   b;   // 4
+    short c;   // 2
+};</code></pre>
+      <div class="diagram">
+        <svg width="420" height="120" viewBox="0 0 420 120">
+          <rect x="30" y="30" width="40" height="45" fill="#ed8936" rx="4"/><text x="50" y="57" text-anchor="middle" fill="#fff" font-size="11">a 1B</text>
+          <rect x="70" y="30" width="90" height="45" fill="#a0aec0" rx="4"/><text x="115" y="57" text-anchor="middle" fill="#fff" font-size="11">pad 3B</text>
+          <rect x="160" y="30" width="120" height="45" fill="#4299e1" rx="4"/><text x="220" y="57" text-anchor="middle" fill="#fff" font-size="11">b 4B</text>
+          <rect x="280" y="30" width="60" height="45" fill="#48bb78" rx="4"/><text x="310" y="57" text-anchor="middle" fill="#fff" font-size="11">c 2B</text>
+          <rect x="340" y="30" width="60" height="45" fill="#a0aec0" rx="4" opacity=".7"/><text x="370" y="57" text-anchor="middle" fill="#fff" font-size="11">pad 2B</text>
+          <text x="235" y="100" text-anchor="middle" font-size="13" fill="#4a5568">1 + 3 + 4 + 2 + 2 = 12 字节（按 4 字节对齐）</text>
+        </svg>
+      </div>
+      <ul>
+        <li>char 后补 3B，让 int 从 4 字节边界开始。</li>
+        <li>short 占 2B，但 struct 整体大小要补齐到最大成员（int）的对齐边界，所以末尾再补 2B。</li>
+        <li>用 <code>sizeof(struct Example)</code> 验证，不要心算猜。</li>
+      </ul>
+      <div class="quiz" id="q5">
+        <h4>快速检查</h4>
+        <p>上述 <code>struct Example</code> 在典型 64 位编译器下大小是？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 7</button>
+        <button class="option" data-c="1" onclick="check(this, true)">B. 12</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. 8</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 16</button>
+        <div class="feedback">1 + 3(pad) + 4 + 2 + 2(pad) = 12 字节。</div>
+      </div>
+    </div>
+
+    <!-- 课程小测 -->
+    <div class="final-test">
+      <h2>📝 L2 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← 返回课程目录</a>
+      <a href="L3_identifiers_compilation.html" style="color:#a0aec0;pointer-events:none;">L3 标识符与编译 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [
+      { q: "堆中总空闲够但没有连续大段空间，属于哪种碎片？", a: 0, opts: ["外部碎片", "内部碎片", "栈溢出", "缓存未命中"], note: "外部碎片是空闲块被占用块隔开，无法合并。" },
+      { q: "内存对齐的主要目的是？", a: 1, opts: ["让代码更短", "提高 CPU 访问效率并避免未对齐异常", "减小可执行文件体积", "让指针更大"], note: "对齐让 CPU 一次读取完整数据，避免异常。" },
+      { q: "union 的大小由什么决定？", a: 2, opts: ["所有成员之和", "第一个成员", "最大成员", "最小成员"], note: "union 共享内存，大小等于最大成员。" },
+      { q: "`unsigned int x : 3;` 可表示多少个值？", a: 2, opts: ["3", "7", "8", "32"], note: "3 bit 可表示 2^3=8 个值（0-7）。" },
+      { q: "典型 64 位编译器下 `struct { char a; int b; short c; }` 的大小是？", a: 1, opts: ["7", "12", "8", "16"], note: "1+3(pad)+4+2+2(pad)=12 字节。" }
+    ];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入 L3。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

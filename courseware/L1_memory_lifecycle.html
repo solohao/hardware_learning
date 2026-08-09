@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L1 内存与生命周期</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L1 内存与生命周期</h1>
+    <p>地址空间全图 · 栈 vs 堆 · 野指针 · 内存泄漏</p>
+  </header>
+
+  <div class="container">
+    <!-- 模块 1 -->
+    <div class="module">
+      <h2>1. 地址空间全图</h2>
+      <p>一个 32/64 位进程看到的虚拟地址空间可以分成几个区域，每个区域职责不同。</p>
+      <div class="diagram">
+        <svg width="420" height="360" viewBox="0 0 420 360">
+          <rect x="110" y="20" width="200" height="50" fill="#e53e3e" rx="6" opacity=".9"/>
+          <text x="210" y="50" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">内核空间 Kernel</text>
+          <rect x="110" y="80" width="200" height="40" fill="#ed8936" rx="6"/>
+          <text x="210" y="105" text-anchor="middle" fill="#fff" font-size="13">栈 Stack（向下增长）</text>
+          <rect x="110" y="130" width="200" height="35" fill="#48bb78" rx="6"/>
+          <text x="210" y="152" text-anchor="middle" fill="#fff" font-size="13">mmap / 共享库</text>
+          <rect x="110" y="175" width="200" height="45" fill="#4299e1" rx="6"/>
+          <text x="210" y="195" text-anchor="middle" fill="#fff" font-size="13">堆 Heap（向上增长）</text>
+          <text x="210" y="210" text-anchor="middle" fill="#fff" font-size="11">malloc / free 管理</text>
+          <rect x="110" y="230" width="200" height="28" fill="#9f7aea" rx="6"/>
+          <text x="210" y="249" text-anchor="middle" fill="#fff" font-size="12">BSS（未初始化全局/静态）</text>
+          <rect x="110" y="266" width="200" height="28" fill="#667eea" rx="6"/>
+          <text x="210" y="285" text-anchor="middle" fill="#fff" font-size="12">数据段 Data（已初始化全局/静态）</text>
+          <rect x="110" y="302" width="200" height="40" fill="#2d3748" rx="6"/>
+          <text x="210" y="322" text-anchor="middle" fill="#fff" font-size="13">代码段 Text（只读代码）</text>
+          <text x="95" y="350" text-anchor="end" font-size="12" fill="#4a5568">低地址</text>
+          <text x="325" y="350" text-anchor="start" font-size="12" fill="#4a5568">高地址</text>
+        </svg>
+      </div>
+      <ul>
+        <li><strong>Text</strong>：机器指令，只读。</li>
+        <li><strong>Data</strong>：已初始化的全局/静态变量。</li>
+        <li><strong>BSS</strong>：未初始化的全局/静态变量，启动时清零。</li>
+        <li><strong>Heap</strong>：动态内存，由程序员申请/释放。</li>
+        <li><strong>Stack</strong>：局部变量、函数参数，自动管理。</li>
+        <li><strong>Kernel</strong>：用户态不可直接访问，系统调用进入。</li>
+      </ul>
+      <div class="quiz" id="q1">
+        <h4>快速检查</h4>
+        <p>未初始化的全局变量存放在哪个段？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 代码段 Text</button>
+        <button class="option" data-c="0" onclick="check(this, false)">B. 数据段 Data</button>
+        <button class="option" data-c="1" onclick="check(this, true)">C. BSS 段</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 堆 Heap</button>
+        <div class="feedback">BSS 段存放未初始化的全局/静态变量，程序启动时会被清零。</div>
+      </div>
+    </div>
+
+    <!-- 模块 2 -->
+    <div class="module">
+      <h2>2. 栈 vs 堆</h2>
+      <p>栈和堆是程序运行时使用最频繁的两块内存，但管理方式和生命周期完全不同。</p>
+      <table>
+        <tr><th>特性</th><th>栈 Stack</th><th>堆 Heap</th></tr>
+        <tr><td>分配时机</td><td>进入函数/作用域时自动分配</td><td>程序员显式 malloc/calloc</td></tr>
+        <tr><td>释放时机</td><td>离开作用域自动释放</td><td>程序员显式 free，或程序结束</td></tr>
+        <tr><td>大小</td><td>较小（通常 1-8 MB）</td><td>较大，受虚拟内存限制</td></tr>
+        <tr><td>典型用途</td><td>局部变量、函数参数</td><td>运行时大小未知的数据、大对象、跨函数数据</td></tr>
+        <tr><td>常见错误</td><td>栈溢出</td><td>内存泄漏、野指针、越界</td></tr>
+      </table>
+      <div class="diagram">
+        <svg width="440" height="260" viewBox="0 0 440 260">
+          <text x="90" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">栈</text>
+          <rect x="40" y="35" width="100" height="50" fill="#ed8936" rx="5"/>
+          <text x="90" y="62" text-anchor="middle" fill="#fff" font-size="12">main 栈帧</text>
+          <rect x="40" y="95" width="100" height="50" fill="#ed8936" rx="5" opacity=".8"/>
+          <text x="90" y="122" text-anchor="middle" fill="#fff" font-size="12">func 栈帧</text>
+          <path d="M90 160 L90 200" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+          <text x="90" y="220" text-anchor="middle" font-size="12">向下增长</text>
+
+          <text x="350" y="25" text-anchor="middle" font-size="14" font-weight="600" fill="#2c5282">堆</text>
+          <rect x="300" y="35" width="100" height="35" fill="#4299e1" rx="5" opacity=".5"/>
+          <text x="350" y="57" text-anchor="middle" fill="#fff" font-size="11">已分配块 A</text>
+          <rect x="300" y="80" width="100" height="35" fill="#a0aec0" rx="5"/>
+          <text x="350" y="102" text-anchor="middle" fill="#fff" font-size="11">空闲块</text>
+          <rect x="300" y="125" width="100" height="35" fill="#4299e1" rx="5" opacity=".7"/>
+          <text x="350" y="147" text-anchor="middle" fill="#fff" font-size="11">已分配块 B</text>
+          <rect x="300" y="170" width="100" height="35" fill="#a0aec0" rx="5"/>
+          <text x="350" y="192" text-anchor="middle" fill="#fff" font-size="11">空闲块</text>
+          <path d="M350 215 L350 245" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+          <text x="350" y="258" text-anchor="middle" font-size="12">向上增长</text>
+
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10" fill="#4a5568"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <div class="quiz" id="q2">
+        <h4>快速检查</h4>
+        <p>函数中的普通局部变量存储在哪里？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 堆 Heap</button>
+        <button class="option" data-c="1" onclick="check(this, true)">B. 栈 Stack</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. BSS 段</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 代码段 Text</button>
+        <div class="feedback">普通局部变量在栈帧中分配，函数返回时自动释放。</div>
+      </div>
+    </div>
+
+    <!-- 模块 3 -->
+    <div class="module">
+      <h2>3. malloc / free 用法</h2>
+      <p><code>malloc</code> 从堆申请 <code>size</code> 字节，返回 <code>void *</code> 指针；申请失败返回 <code>NULL</code>。</p>
+      <pre><code>int *p = malloc(sizeof(int) * 10);
+if (p == NULL) {
+    // 处理失败：退出或重试
+    return -1;
+}
+for (int i = 0; i &lt; 10; i++) {
+    p[i] = i;
+}
+free(p);   // 释放
+p = NULL;  // 避免野指针</code></pre>
+      <ul>
+        <li>用 <code>sizeof</code> 而不是写死字节数，保证可移植。</li>
+        <li><code>malloc</code> 不初始化，内容是未定义的。</li>
+        <li><code>calloc</code> 会清零内存；<code>realloc</code> 调整已分配块大小。</li>
+      </ul>
+      <div class="quiz" id="q3">
+        <h4>快速检查</h4>
+        <p><code>malloc</code> 失败时返回什么？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 返回 -1</button>
+        <button class="option" data-c="0" onclick="check(this, false)">B. 返回 0</button>
+        <button class="option" data-c="1" onclick="check(this, true)">C. 返回 NULL</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 返回空字符串</button>
+        <div class="feedback">申请失败时 <code>malloc</code> 返回 <code>NULL</code>，调用方必须检查。</div>
+      </div>
+    </div>
+
+    <!-- 模块 4 -->
+    <div class="module">
+      <h2>4. 野指针与防范</h2>
+      <p>野指针是指向已被释放或无效内存的指针，使用它会导致未定义行为。</p>
+      <h3>常见成因</h3>
+      <ul>
+        <li><strong>free 后置空</strong>：<code>free(p);</code> 后 p 还保存旧地址。</li>
+        <li><strong>越界访问</strong>：读写超出 <code>malloc</code> 范围。</li>
+        <li><strong>重复释放</strong>：<code>free(p); free(p);</code> 破坏堆结构。</li>
+        <li><strong>返回局部变量地址</strong>：函数结束后栈帧被回收。</li>
+      </ul>
+      <pre><code>int *p = malloc(sizeof(int));
+*p = 42;
+free(p);
+// p 此时是野指针，但保存的地址数字还在
+p = NULL;  // 置空，明确它已不可用
+
+// 错误示例
+int *q = malloc(sizeof(int));
+free(q);
+free(q);  // double free，未定义行为</code></pre>
+      <div class="quiz" id="q4">
+        <h4>快速检查</h4>
+        <p><code>free(p)</code> 之后，为了避免产生野指针，通常应做什么？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. 再次 free(p)</button>
+        <button class="option" data-c="1" onclick="check(this, true)">B. p = NULL;</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. p++;</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 什么都不做</button>
+        <div class="feedback">free 后把指针置 NULL，后续 if(p) 等判断就不会误用。</div>
+      </div>
+    </div>
+
+    <!-- 模块 5 -->
+    <div class="module">
+      <h2>5. 内存泄漏</h2>
+      <p>申请了堆内存但没有 <code>free</code>，且没有任何指针再指向它，就会造成内存泄漏。长时间运行的嵌入式设备尤其要注意。</p>
+      <pre><code>void leak_example() {
+    while (1) {
+        char *buf = malloc(1024);
+        // 使用 buf ...
+        // 忘记 free(buf); -> 每轮循环泄漏 1KB
+    }
+}</code></pre>
+      <p>嵌入式系统内存有限，泄漏会导致 OOM、任务被杀或系统重启。</p>
+      <ul>
+        <li>每个 <code>malloc</code> 都要有对应的 <code>free</code>。</li>
+        <li>异常路径（<code>return</code>、<code>goto</code>、错误处理）中也要释放。</li>
+        <li>Linux 可用 <code>valgrind</code> 检测内存泄漏。</li>
+      </ul>
+      <div class="quiz" id="q5">
+        <h4>快速检查</h4>
+        <p>下面哪种情况会导致内存泄漏？</p>
+        <button class="option" data-c="0" onclick="check(this, false)">A. malloc 后立即 free</button>
+        <button class="option" data-c="1" onclick="check(this, true)">B. malloc 后丢失指针且未 free</button>
+        <button class="option" data-c="0" onclick="check(this, false)">C. free 后置 NULL</button>
+        <button class="option" data-c="0" onclick="check(this, false)">D. 栈上定义局部变量</button>
+        <div class="feedback">丢失指针且未释放，堆块就无法回收，造成泄漏。</div>
+      </div>
+    </div>
+
+    <!-- 课程小测 -->
+    <div class="final-test">
+      <h2>📝 L1 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← 返回课程目录</a>
+      <a href="L2_storage_layout.html">L2 存储布局 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [
+      { q: "未初始化的全局变量通常放在哪个段？", a: 2, opts: ["Text", "Data", "BSS", "Heap"], note: "BSS 段存放未初始化的全局/静态变量。" },
+      { q: "malloc 失败时返回什么？", a: 2, opts: ["-1", "0", "NULL", "空字符串"], note: "失败返回 NULL。" },
+      { q: "普通局部变量默认存储在哪个区域？", a: 1, opts: ["堆", "栈", "BSS", "代码段"], note: "局部变量在栈帧中。" },
+      { q: "free(p) 后避免野指针的最佳做法是？", a: 1, opts: ["再次 free", "p = NULL", "p++", "什么都不做"], note: "free 后置 NULL。" },
+      { q: "下面哪种情况会导致内存泄漏？", a: 1, opts: ["malloc 后立刻 free", "malloc 后丢失指针且未 free", "free 后置 NULL", "使用栈变量"], note: "丢失且未释放的堆块造成泄漏。" }
+    ];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入 L2。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

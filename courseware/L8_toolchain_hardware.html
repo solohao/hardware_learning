@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L8 工具链与硬件</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L8 工具链与硬件</h1>
+    <p>交叉编译 · 静态库 vs 动态库 · DMA 与 cache · 左值右值</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. 交叉编译</h2>
+<p>在 PC（x86）上编译出能在嵌入式 ARM 等平台运行的程序，称为交叉编译。</p>
+<ul>
+  <li>编译器命名通常形如 <code>arm-none-eabi-gcc</code>、<code>aarch64-linux-gnu-gcc</code>。</li>
+  <li>需要目标平台的头文件、库、链接脚本和启动文件。</li>
+  <li>编译产物不能在本机直接运行，需要烧录或放到目标设备。</li>
+</ul>
+<pre><code>arm-none-eabi-gcc -mcpu=cortex-m4 -o firmware.elf main.c</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>交叉编译器运行在哪个平台上？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 目标嵌入式设备</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 开发主机</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 只在云端</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 浏览器</button>
+  <div class="feedback">交叉编译器在开发主机上运行，生成目标平台的可执行代码。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 静态库 vs 动态库</h2>
+<table>
+  <tr><th>特性</th><th>静态库 .a</th><th>动态库 .so/.dll</th></tr>
+  <tr><td>链接时机</td><td>编译时复制到可执行文件</td><td>运行时加载</td></tr>
+  <tr><td>体积</td><td>可执行文件大，但无运行时依赖</td><td>可执行文件小，多个程序共享</td></tr>
+  <tr><td>更新</td><td>重新编译才能更新</td><td>替换 .so 即可（接口兼容）</td></tr>
+  <tr><td>嵌入式常用</td><td>常用</td><td>资源足够时可用</td></tr>
+</table>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>哪种库在编译时被完整复制到可执行文件中？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 静态库</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 动态库</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 共享库</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 源码库</button>
+  <div class="feedback">静态库在链接阶段被复制到可执行文件，运行时不需要单独库文件。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. DMA 与 Cache</h2>
+<ul>
+  <li><strong>DMA（Direct Memory Access）</strong>：外设和内存之间直接传输数据，不需要 CPU 逐字节搬运。</li>
+  <li><strong>Cache 一致性问题</strong>：CPU 可能把数据留在缓存中，而 DMA 看到的是物理内存中的旧数据。</li>
+  <li><strong>解决</strong>：DMA 前对 cache 做 clean/flush（把缓存写回内存），DMA 后 invalidate（让缓存失效，重新读内存）。</li>
+</ul>
+<pre><code>// DMA 前：确保内存有最新数据
+__builtin___clear_cache(dst, dst + size);  // GCC 示例
+// DMA 后：让 cache 失效，CPU 重新读取</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>DMA 开始前通常需要对 cache 做什么？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 关闭 CPU</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. flush/clean，把缓存数据写回内存</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 删除内存</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 什么都不用做</button>
+  <div class="feedback">DMA 看到的是物理内存，如果 CPU cache 里有最新数据，必须先写回。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. 左值与右值</h2>
+<ul>
+  <li><strong>左值 lvalue</strong>：能取地址、可被赋值，如变量、数组元素、解引用后的指针。</li>
+  <li><strong>右值 rvalue</strong>：临时值，不能取地址，如字面量、表达式结果、函数返回值（非引用）。</li>
+</ul>
+<pre><code>int a = 5;
+a = 10;      // a 是左值
+// 5 = a;    // 错误：5 是右值
+
+int *p = &a;
+*p = 20;     // *p 是左值
+
+int b = a + 1;  // a+1 是右值</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>下面哪个是左值？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 10</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. a + 1</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 变量 a</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 函数返回值 int</button>
+  <div class="feedback">变量有固定地址，可被赋值，是左值。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L8 工具链与硬件 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L7_concurrency.html">← L7 并发与同步</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L9_cpp_core.html">L9 C++ 核心 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "交叉编译器通常运行在？", "opts": ["目标设备", "开发主机", "手机上", "浏览器"], "a": 1, "note": "交叉编译在主机运行，生成目标平台代码。"}, {"q": "编译时被复制到可执行文件的是？", "opts": ["静态库", "动态库", "共享对象", "源代码"], "a": 0, "note": "静态库在链接阶段被完整复制到可执行文件。"}, {"q": "DMA 前通常需要对 cache 做什么？", "opts": ["清空", "flush 写回内存", "禁用", "扩容"], "a": 1, "note": "确保 DMA 看到内存中最新的数据。"}, {"q": "左值最重要的特征是？", "opts": ["不能取地址", "可被赋值且能取地址", "只能是字面量", "临时"], "a": 1, "note": "左值有地址，可被赋值。"}, {"q": "动态库的主要优势是？", "opts": ["无运行时依赖", "文件体积小、可共享更新", "运行速度更快", "编译速度更快"], "a": 1, "note": "动态库可被多个程序共享，更新时不需要重新编译主程序。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

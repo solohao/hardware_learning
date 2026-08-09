@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L12 口述串讲</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L12 口述串讲</h1>
+    <p>内存三题一张图 · 进程/线程/锁复习</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. 内存三题一张图</h2>
+<p>面试口述内存时，先画出地址空间图，然后能讲清楚：</p>
+<ol>
+  <li>栈和堆的区别（自动分配 vs 动态分配，生命周期，大小）。</li>
+  <li>malloc/free 流程，野指针怎么产生（free 后置 NULL）。</li>
+  <li>struct 对齐与 padding，位域和 union 的使用场景。</li>
+</ol>
+<div class="diagram">
+  <svg width="360" height="260" viewBox="0 0 360 260">
+    <rect x="80" y="20" width="200" height="40" fill="#e53e3e" rx="5" opacity=".9"/><text x="180" y="45" text-anchor="middle" fill="#fff" font-size="13">Kernel</text>
+    <rect x="80" y="65" width="200" height="35" fill="#ed8936" rx="5"/><text x="180" y="87" text-anchor="middle" fill="#fff" font-size="12">Stack</text>
+    <rect x="80" y="105" width="200" height="35" fill="#4299e1" rx="5"/><text x="180" y="127" text-anchor="middle" fill="#fff" font-size="12">Heap</text>
+    <rect x="80" y="145" width="200" height="30" fill="#9f7aea" rx="5"/><text x="180" y="165" text-anchor="middle" fill="#fff" font-size="11">BSS/Data</text>
+    <rect x="80" y="180" width="200" height="35" fill="#2d3748" rx="5"/><text x="180" y="203" text-anchor="middle" fill="#fff" font-size="12">Text</text>
+    <text x="180" y="240" text-anchor="middle" font-size="12" fill="#4a5568">口述时先画图，再讲每段作用</text>
+  </svg>
+</div>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>面试口述内存时，最值得先画出来的图是？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 地址空间全图</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 类图</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 网络拓扑图</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. UML 时序图</button>
+  <div class="feedback">地址空间图能把栈、堆、BSS、代码段等概念串起来。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 进程 / 线程 / 锁</h2>
+<p>口述这三块时，可以按这个结构组织：</p>
+<ul>
+  <li><strong>进程</strong>：独立地址空间，fork 创建，COW，exec 替换镜像。</li>
+  <li><strong>线程</strong>：共享地址空间，轻量，切换快，注意同步与竞态。</li>
+  <li><strong>锁</strong>：mutex（阻塞）、semaphore（计数）、spinlock（忙等，中断用）。</li>
+</ul>
+<pre><code>// 中断 + 主循环共享标志
+volatile int irq_flag = 0;
+
+void ISR() { irq_flag = 1; }
+
+int main() {
+    while (1) {
+        if (irq_flag) { irq_flag = 0; handle(); }
+    }
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>中断上下文和主循环共享标志变量，应声明为？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. static</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. const</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. volatile</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. extern</button>
+  <div class="feedback">volatile 防止编译器优化，确保每次读写都访问内存。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 口述答题技巧</h2>
+<ul>
+  <li><strong>STAR 化</strong>：先说概念，再举例子，最后讲陷阱。</li>
+  <li><strong>画图</strong>：地址空间、fork 树、锁流程、TCP 握手、OSI 分层。</li>
+  <li><strong>讲出为什么</strong>：不要只背答案，解释“为什么这样设计”。</li>
+  <li><strong>结合项目</strong>：尽量提到自己在 STM32/Linux 上遇到的实际场景。</li>
+</ul>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>面试口述技术点时，最有效的方式是？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 概念 + 例子 + 画图 + 为什么</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 只背定义</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 只写代码</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 讲冷笑话</button>
+  <div class="feedback">结构化回答 + 画图 + 结合实际，最能体现理解深度。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L12 口述串讲 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L11_protocols.html">← L11 协议与手写</a>
+      <a href="index.html">返回课程目录</a>
+      <span> →</span>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "口述内存时最应该先画什么？", "opts": ["地址空间全图", "类图", "网络图", "流程图"], "a": 0, "note": "地址空间图能串联栈、堆、BSS、代码段。"}, {"q": "线程相比进程切换开销更？", "opts": ["大", "小", "一样", "不确定"], "a": 1, "note": "线程共享地址空间，切换不需要切换页表。"}, {"q": "中断里适合用什么锁？", "opts": ["mutex", "semaphore", "spinlock", "递归锁"], "a": 2, "note": "自旋锁不会睡眠，适合中断上下文。"}, {"q": "共享标志变量在主循环与 ISR 间应加什么修饰？", "opts": ["static", "const", "volatile", "extern"], "a": 2, "note": "volatile 防止编译器优化掉对标志的读写。"}, {"q": "fork + exec 时如果立刻 exec，COW 的优势是？", "opts": ["复制所有页", "几乎不复制物理页", "清空页表", "禁用缓存"], "a": 1, "note": "COW 让 fork 后 exec 几乎不用复制物理页，提高 fork/exec 效率。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

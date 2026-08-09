@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L4 C 杂项</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L4 C 杂项</h1>
+    <p>sizeof vs strlen · 函数指针与回调 · 内联函数 · 中断函数</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. sizeof 与 strlen</h2>
+<ul>
+  <li><code>sizeof</code> 是编译时运算符，返回类型或对象占用的字节数。</li>
+  <li><code>strlen</code> 是运行时函数，返回字符串中 <code>\0</code> 之前的字符个数。</li>
+</ul>
+<pre><code>char s[] = "abc";
+printf("%zu\n", sizeof(s));  // 4（包含结尾 \0）
+printf("%zu\n", strlen(s));  // 3（不包含 \0）
+
+char *p = "abc";
+printf("%zu\n", sizeof(p));  // 4/8，指针大小</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p><code>char s[] = "abc";</code> 中，哪个结果包含字符串结尾的 <code>\0</code>？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. strlen(s)</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. sizeof(s)</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 都包含</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 都不包含</button>
+  <div class="feedback">sizeof 计算数组总大小，包含 \0；strlen 只计算 \0 前字符数。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 函数指针与回调</h2>
+<p>函数指针保存函数的入口地址，可用于回调、策略模式、把函数作为参数传递。</p>
+<pre><code>int add(int a, int b) { return a + b; }
+int sub(int a, int b) { return a - b; }
+
+int (*op)(int, int);       // 声明函数指针
+op = add;
+printf("%d\n", op(2, 3));  // 5
+
+// 回调
+int calc(int a, int b, int (*f)(int, int)) {
+    return f(a, b);
+}
+printf("%d\n", calc(2, 3, sub));</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>下面哪个声明是“指向函数的指针”？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. int *pf(void);</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. int (*pf)(void);</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. int pf(void);</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. int *(pf)(void);</button>
+  <div class="feedback">括号让 * 先与 pf 结合，表示 pf 是指向函数的指针。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 内联函数 inline</h2>
+<p><code>inline</code> 是对编译器的建议：把函数体直接展开到调用处，减少函数调用开销。</p>
+<ul>
+  <li>是否真正内联由编译器根据优化级别和函数大小决定。</li>
+  <li>内联函数有类型检查，比宏更安全；但滥用会增加代码体积。</li>
+  <li>在嵌入式中，小型频繁调用的函数适合内联。</li>
+</ul>
+<pre><code>static inline int max(int a, int b) {
+    return a > b ? a : b;
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p><code>inline</code> 关键字的主要作用是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 强制编译器一定展开</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 建议编译器减少函数调用开销</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 让函数只能在当前文件使用</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 让函数返回值更大</button>
+  <div class="feedback">inline 是建议，编译器会权衡是否真正内联展开。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. 中断函数（ISR）</h2>
+<p>中断服务程序（Interrupt Service Routine）响应硬件事件，要求短小、快速、不能阻塞。</p>
+<ul>
+  <li><strong>不能睡眠/阻塞</strong>：中断上下文没有进程上下文，调度器无法调度它。</li>
+  <li><strong>避免 printf/malloc</strong>：这些函数可能加锁，导致中断里死锁或重入问题。</li>
+  <li><strong>操作共享变量要加保护</strong>：对 8/16/32 位非原子变量，用关中断或自旋锁保护。</li>
+  <li>典型做法：ISR 设置 <code>volatile</code> 标志，主循环轮询处理。</li>
+</ul>
+<pre><code>volatile int flag = 0;
+
+void ISR_handler(void) {
+    flag = 1;  // 简短操作
+}
+
+int main() {
+    while (1) {
+        if (flag) {
+            flag = 0;
+            do_work();
+        }
+    }
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>中断服务程序里一般不应该做以下哪件事？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 设置一个 volatile 标志</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 调用 printf 输出日志</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 读取寄存器状态</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 清除中断标志</button>
+  <div class="feedback">printf 可能持锁和阻塞，在中断里调用容易导致死锁或崩溃。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L4 C 杂项 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L3_identifiers_compilation.html">← L3 标识符与编译</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L5_kernel_processes.html">L5 内核与进程 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "sizeof(\"abc\") 与 strlen(\"abc\") 的区别是？", "opts": ["都等于 3", "sizeof 含 \u0000，strlen 不含", "strlen 含 \u0000，sizeof 不含", "都等于 4"], "a": 1, "note": "sizeof 计算含 \u0000 的总字节数，strlen 只数 \u0000 前字符。"}, {"q": "函数指针的正确声明是？", "opts": ["int *pf();", "int (*pf)();", "int pf();", "int &pf();"], "a": 1, "note": "括号让 * 与 pf 结合，表示函数指针。"}, {"q": "inline 关键字保证内联吗？", "opts": ["一定内联", "只是建议", "禁止内联", "只在 main 中有效"], "a": 1, "note": "inline 只是对编译器的建议，是否内联由编译器决定。"}, {"q": "中断函数里应避免做什么？", "opts": ["设置标志", "调用 printf", "读寄存器", "清中断标志"], "a": 1, "note": "printf 可能持锁和阻塞，不适合在中断里调用。"}, {"q": "共享变量在主循环与 ISR 间传递时应声明为？", "opts": ["static", "extern", "volatile", "const"], "a": 2, "note": "volatile 告诉编译器变量可能被外部改变，不要优化掉读写。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

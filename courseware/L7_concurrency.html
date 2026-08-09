@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L7 并发与同步</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L7 并发与同步</h1>
+    <p>三种锁 · 中断上下文不能睡 · 原子操作 · SMP</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. 三种锁：互斥量、信号量、自旋锁</h2>
+<table>
+  <tr><th>锁</th><th>特点</th><th>适用场景</th></tr>
+  <tr><td><strong>mutex</strong></td><td>二值锁，获取不到则阻塞睡眠</td><td>进程/线程临界区，可能长时间持有</td></tr>
+  <tr><td><strong>semaphore</strong></td><td>计数锁，可多个持有者</td><td>资源池、生产者消费者</td></tr>
+  <tr><td><strong>spinlock</strong></td><td>获取不到则忙等（轮询）</td><td>中断上下文、SMP 极短临界区</td></tr>
+</table>
+<p>自旋锁不会睡眠，所以适合中断上下文；但长时间自旋会浪费 CPU。</p>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>在中断上下文里保护共享变量，通常用什么锁？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. mutex</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 信号量</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 自旋锁</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 读写锁</button>
+  <div class="feedback">自旋锁不会睡眠，适合中断上下文短临界区。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 中断上下文不能睡眠</h2>
+<p>ISR 执行时没有对应的进程控制块（PCB），调度器无法把它挂起再调度其他任务。因此：</p>
+<ul>
+  <li>不能调用可能阻塞的函数：如 <code>sleep</code>、<code>printf</code>、<code>malloc</code>、<code>mutex_lock</code>。</li>
+  <li>临界区要尽可能短：只做读状态、清标志、唤醒底半部。</li>
+  <li>复杂处理放到底半部（softirq、tasklet、workqueue）或主循环。</li>
+</ul>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>中断服务程序里为什么不能调用 sleep？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 会让中断更快</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 中断上下文没有可挂起的进程，无法调度</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. sleep 会加速系统</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 中断中 sleep 是允许的</button>
+  <div class="feedback">中断上下文不属于任何进程，无法被调度器挂起，睡眠会导致系统卡住。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 原子操作</h2>
+<p>原子操作是不可分割的：执行过程中不会被其他 CPU 或中断打断，常用于计数器和标志位。</p>
+<pre><code>atomic_t cnt = ATOMIC_INIT(0);
+atomic_inc(&cnt);   // 计数 +1，无需加锁
+
+// CAS：比较并交换
+bool cas(int *p, int expected, int newval) {
+    if (*p == expected) { *p = newval; return true; }
+    return false;
+}</code></pre>
+<p>对于 32 位变量的一次读写，在大多数架构上是原子的；但对多字操作或读-改-写仍需显式原子 API。</p>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>原子操作的主要意义是什么？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 让程序运行更快</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 在多线程/中断环境中不可被中断地完成</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 只能用于单核 CPU</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 不需要编译器支持</button>
+  <div class="feedback">原子操作在执行期间不可分割，避免竞态。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. SMP 与缓存一致性</h2>
+<p><strong>SMP（Symmetric Multi-Processing）</strong>：多个 CPU 核心共享内存，操作系统把它们视为对等的处理单元。</p>
+<ul>
+  <li>每个核心有独立缓存，同一块内存可能在多个缓存中存在副本。</li>
+  <li><strong>缓存一致性协议</strong>（如 MESI）保证各缓存副本一致。</li>
+  <li>多核访问共享变量需要锁、原子操作或内存屏障，防止乱序和脏数据。</li>
+</ul>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>SMP 系统中，多核共享内存时最需要解决的问题是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 内存容量太小</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 进程 ID 冲突</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 缓存一致性与并发访问</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 屏幕分辨率</button>
+  <div class="feedback">多核共享内存必须保证各核心缓存一致，并正确同步并发访问。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L7 并发与同步 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L6_process_vm.html">← L6 进程状态与虚存</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L8_toolchain_hardware.html">L8 工具链与硬件 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "中断上下文适合用哪种锁？", "opts": ["mutex", "semaphore", "spinlock", "futex"], "a": 2, "note": "自旋锁不会睡眠，适合中断上下文。"}, {"q": "中断里为什么不能 sleep？", "opts": ["会让中断更快", "没有可调度进程上下文", "sleep 太短", "会关中断"], "a": 1, "note": "中断上下文不属于进程，无法被调度器挂起。"}, {"q": "原子操作的核心特征是？", "opts": ["不可分割", "必须加锁", "只能单核", "速度最快"], "a": 0, "note": "原子操作在执行期间不会被中断或分割。"}, {"q": "SMP 多核共享内存最大的挑战？", "opts": ["内存大小", "缓存一致性与并发同步", "进程数量", "磁盘速度"], "a": 1, "note": "多核需要缓存一致性协议和同步机制。"}, {"q": "长时间持有自旋锁会导致？", "opts": ["上下文切换", "浪费 CPU", "内存泄漏", "缓存命中"], "a": 1, "note": "自旋锁忙等，长时间持有会浪费 CPU 时间。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

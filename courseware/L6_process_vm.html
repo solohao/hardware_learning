@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L6 进程状态与虚存</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L6 进程状态与虚存</h1>
+    <p>僵尸/孤儿/守护 · 虚拟内存与 MMU · 缺页与 mmap · RAM/ROM/FLASH</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. 进程状态：僵尸、孤儿、守护</h2>
+<ul>
+  <li><strong>僵尸进程 Zombie</strong>：子进程已结束，但父进程尚未调用 <code>wait()/waitpid()</code> 回收。内核保留少量信息供父进程查询。</li>
+  <li><strong>孤儿进程 Orphan</strong>：父进程先于子进程退出，子进程被 init/systemd 接管，最终由 init 回收。</li>
+  <li><strong>守护进程 Daemon</strong>：后台运行、与终端脱离、通常启动时由系统管理，如网络服务。</li>
+</ul>
+<pre><code>// 避免僵尸：父进程及时 wait
+pid_t pid = fork();
+if (pid == 0) { exit(0); }
+else { wait(NULL); }</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>父进程未回收已结束子进程，子进程变成什么？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 僵尸进程</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 孤儿进程</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 守护进程</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 就绪进程</button>
+  <div class="feedback">已结束但父进程未 wait 的子进程称为僵尸进程。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 虚拟内存与 MMU</h2>
+<p>每个进程看到的地址都是“虚拟地址”，由 <strong>内存管理单元（MMU）</strong> 配合页表映射到物理地址。</p>
+<ul>
+  <li><strong>隔离</strong>：进程 A 不能直接访问进程 B 的内存。</li>
+  <li><strong>超额分配</strong>：进程可申请比物理内存更大的虚拟空间，按需装入物理页。</li>
+  <li><strong>TLB</strong>：页表的高速缓存，加速地址转换。</li>
+</ul>
+<div class="diagram">
+  <svg width="460" height="180" viewBox="0 0 460 180">
+    <rect x="20" y="20" width="120" height="60" fill="#4299e1" rx="5"/><text x="80" y="45" text-anchor="middle" fill="#fff" font-size="12">进程虚拟地址</text>
+    <text x="80" y="65" text-anchor="middle" fill="#fff" font-size="11">0x4000</text>
+    <text x="170" y="55" font-size="18">→</text>
+    <rect x="200" y="20" width="100" height="60" fill="#ed8936" rx="5"/><text x="250" y="45" text-anchor="middle" fill="#fff" font-size="12">页表/MMU</text>
+    <text x="250" y="65" text-anchor="middle" fill="#fff" font-size="11">查表/TLB</text>
+    <text x="320" y="55" font-size="18">→</text>
+    <rect x="350" y="20" width="90" height="60" fill="#48bb78" rx="5"/><text x="395" y="45" text-anchor="middle" fill="#fff" font-size="12">物理内存</text>
+    <text x="395" y="65" text-anchor="middle" fill="#fff" font-size="11">0xA000</text>
+    <text x="230" y="120" text-anchor="middle" font-size="13" fill="#4a5568">虚拟地址经 MMU 转换为物理地址</text>
+    <text x="230" y="145" text-anchor="middle" font-size="12" fill="#718096">页表记录映射关系；TLB 缓存常用页</text>
+  </svg>
+</div>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>把虚拟地址转换成物理地址的硬件单元是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. CPU</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. DMA</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. MMU</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. Cache</button>
+  <div class="feedback">MMU 负责虚拟地址到物理地址的转换。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 缺页中断与 mmap</h2>
+<ul>
+  <li><strong>缺页异常 Page Fault</strong>：访问的虚拟页当前不在物理内存或未映射，CPU 陷入内核，OS 负责加载页面或处理错误。</li>
+  <li><strong>按需分页</strong>：程序启动时并不全部加载，用到哪页再调哪页。</li>
+  <li><strong>mmap</strong>：把文件或设备映射到进程虚拟地址空间，可像访问内存一样读写文件。</li>
+</ul>
+<pre><code>// 映射文件到内存
+void *addr = mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, 0);</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>访问一个已分配但尚未载入物理内存的虚拟页，会触发什么？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 段错误一定崩溃</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 缺页异常，由 OS 处理加载</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 立即返回 NULL</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 无任何反应</button>
+  <div class="feedback">缺页异常会触发 OS 的页调入或错误处理流程。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. RAM / ROM / FLASH</h2>
+<table>
+  <tr><th>存储器</th><th>特点</th><th>典型用途</th></tr>
+  <tr><td>RAM</td><td>读写快，掉电丢失</td><td>运行时变量、堆、栈、缓冲区</td></tr>
+  <tr><td>ROM</td><td>只读，出厂烧录，不可改</td><td>启动 BootROM、固定程序</td></tr>
+  <tr><td>FLASH</td><td>非易失，按块擦除，有擦写次数</td><td>固件、配置、文件系统</td></tr>
+</table>
+<p>嵌入式启动流程通常是：CPU 从 ROM/FLASH 加载 Bootloader → 初始化 RAM → 把 OS/APP 从 FLASH 复制到 RAM 运行。</p>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>嵌入式设备中，固件通常存储在哪里？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. RAM</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. ROM（出厂只读）</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. FLASH</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 寄存器</button>
+  <div class="feedback">FLASH 可擦写且非易失，是存放固件最常用的介质。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L6 进程状态与虚存 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L5_kernel_processes.html">← L5 内核与进程</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L7_concurrency.html">L7 并发与同步 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "父进程未 wait 子进程，子进程退出后叫什么？", "opts": ["僵尸", "孤儿", "守护", "就绪"], "a": 0, "note": "未回收的已结束子进程是僵尸进程。"}, {"q": "负责虚拟地址转物理地址的硬件是？", "opts": ["DMA", "MMU", "Cache", "ALU"], "a": 1, "note": "MMU 管理虚拟到物理地址的映射。"}, {"q": "访问未映射或不在物理内存的页会触发？", "opts": ["缺页异常", "定时中断", "DMA 完成", "系统调用"], "a": 0, "note": "页表项无效或未驻留会触发缺页异常。"}, {"q": "mmap 可以把什么映射到内存？", "opts": ["只有 RAM", "文件或设备", "CPU 寄存器", "进程 PCB"], "a": 1, "note": "mmap 把文件或设备内存映射到进程虚拟地址空间。"}, {"q": "掉电后仍能保存程序的存储介质是？", "opts": ["RAM", "ROM/FLASH", "Cache", "寄存器"], "a": 1, "note": "ROM 和 FLASH 是非易失性存储，掉电保持数据。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

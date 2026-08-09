@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L10 调试与性能</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L10 调试与性能</h1>
+    <p>coredump+gdb · addr2line · perf</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. coredump 与 gdb</h2>
+<p><strong>coredump（核心转储）</strong>：程序异常退出时，把内存、寄存器、堆栈等状态保存到文件，供调试分析。</p>
+<ul>
+  <li>开启： <code>ulimit -c unlimited</code>。</li>
+  <li>调试： <code>gdb ./a.out core</code>，常用 <code>bt</code> 看调用栈。</li>
+  <li>嵌入式中常在开发环境用 gdb + gdbserver 远程调试目标板。</li>
+</ul>
+<pre><code>$ ./myapp
+Segmentation fault (core dumped)
+$ gdb ./myapp core
+(gdb) bt           # 查看调用栈
+(gdb) info locals  # 查看局部变量</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>程序崩溃后，coredump 文件里保存了什么？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 崩溃时的内存、寄存器和调用栈状态</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 源代码文件</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 编译日志</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 网络数据包</button>
+  <div class="feedback">coredump 是崩溃瞬间进程状态的快照，用于事后分析。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. gdb 常用命令</h2>
+<table>
+  <tr><th>命令</th><th>作用</th></tr>
+  <tr><td><code>break main</code></td><td>在 main 函数处设置断点</td></tr>
+  <tr><td><code>run</code></td><td>运行程序</td></tr>
+  <tr><td><code>next / step</code></td><td>单步执行（不进入/进入函数）</td></tr>
+  <tr><td><code>continue</code></td><td>继续运行到下一个断点</td></tr>
+  <tr><td><code>print var</code></td><td>打印变量值</td></tr>
+  <tr><td><code>backtrace / bt</code></td><td>查看调用栈</td></tr>
+  <tr><td><code>info registers</code></td><td>查看寄存器</td></tr>
+</table>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>gdb 中查看函数调用栈的命令是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. run</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. break</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. backtrace / bt</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. print</button>
+  <div class="feedback">backtrace 或 bt 用于查看当前调用栈。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. addr2line</h2>
+<p>当程序日志只打印了一个崩溃地址，而目标板没有调试符号时，可以用 <code>addr2line</code> 把地址转换回源码文件名和行号。</p>
+<pre><code># 编译时保留调试信息
+$ gcc -g -o app main.c
+
+# 把地址转换为源码位置
+$ addr2line -e app 0x4005b6
+main.c:42</code></pre>
+<p>嵌入式中常把地址日志导出，在主机用带符号的 ELF 文件反查行号。</p>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>addr2line 的功能是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 编译程序</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 反汇编代码</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 把运行地址转换为源码文件和行号</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 下载程序到设备</button>
+  <div class="feedback">addr2line 用调试符号把地址映射回源码位置，便于定位崩溃点。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. perf 性能分析</h2>
+<p><code>perf</code> 是 Linux 内核自带的性能剖析工具，可以查看：</p>
+<ul>
+  <li>CPU 热点函数（<code>perf top</code> / <code>perf record -g</code>）。</li>
+  <li>缓存命中率、缺页、分支预测等硬件事件。</li>
+  <li>火焰图（Flame Graph）：直观显示时间花在哪些调用栈上。</li>
+</ul>
+<pre><code>$ perf record -g ./myapp
+$ perf report</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>perf 主要用于？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 编译程序</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 打包静态库</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 性能剖析和热点定位</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 内存分配</button>
+  <div class="feedback">perf 通过性能计数器分析 CPU 热点和硬件事件。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L10 调试与性能 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L9_cpp_core.html">← L9 C++ 核心</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L11_protocols.html">L11 协议与手写 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "coredump 里保存了什么？", "opts": ["源代码", "崩溃时内存和栈状态", "编译日志", "网络包"], "a": 1, "note": "coredump 是崩溃瞬间进程内存、寄存器、栈的快照。"}, {"q": "gdb 中查看调用栈的命令？", "opts": ["run", "bt", "print", "break"], "a": 1, "note": "bt / backtrace 查看调用栈。"}, {"q": "addr2line 用于？", "opts": ["编译", "地址转源码行号", "内存分配", "反汇编"], "a": 1, "note": "addr2line 把地址映射到源码文件和行号。"}, {"q": "perf 的主要用途？", "opts": ["静态分析", "性能剖析", "网络抓包", "代码格式化"], "a": 1, "note": "perf 用于性能剖析和热点定位。"}, {"q": "嵌入式中远程调试常用组合？", "opts": ["gdb + gdbserver", "gcc + objdump", "make + cmake", "ssh + scp"], "a": 0, "note": "gdb + gdbserver 是嵌入式远程调试的常用组合。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

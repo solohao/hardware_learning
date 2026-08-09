@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L9 C++ 核心</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L9 C++ 核心</h1>
+    <p>struct vs class · 构造析构 · 虚函数 vtable · RAII 与智能指针</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. struct vs class</h2>
+<p>C++ 中 <code>struct</code> 和 <code>class</code> 本质相同，主要区别是默认访问权限：</p>
+<ul>
+  <li><code>struct</code>：默认 <strong>public</strong>。</li>
+  <li><code>class</code>：默认 <strong>private</strong>。</li>
+  <li>两者都可以有成员变量、成员函数、构造函数、继承、多态。</li>
+</ul>
+<pre><code>struct S {
+    int x;        // 默认 public
+};
+
+class C {
+    int x;        // 默认 private
+};</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>C++ 中 class 的默认访问权限是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. public</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. private</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. protected</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. friend</button>
+  <div class="feedback">class 默认成员为 private，struct 默认 public。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. 构造函数与析构函数</h2>
+<ul>
+  <li><strong>构造函数</strong>：对象创建时自动调用，用于初始化成员、分配资源。</li>
+  <li><strong>析构函数</strong>：对象销毁时自动调用，用于释放资源、清理。</li>
+  <li>没有返回值，函数名与类名相同，析构函数前加 <code>~</code>。</li>
+</ul>
+<pre><code>class FileHandler {
+    FILE *fp;
+public:
+    FileHandler(const char *path) { fp = fopen(path, "r"); }
+    ~FileHandler() { if (fp) fclose(fp); }
+};</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>对象超出作用域时自动调用的是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 构造函数</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 析构函数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. main 函数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 拷贝构造函数</button>
+  <div class="feedback">对象销毁时自动调用析构函数，用于资源释放。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 虚函数与 vtable</h2>
+<p>虚函数实现运行时多态：通过基类指针或引用调用派生类重写的函数。</p>
+<ul>
+  <li>含虚函数的类会有一张 <strong>虚函数表（vtable）</strong>，存储虚函数地址。</li>
+  <li>每个对象有一个隐藏的 <strong>虚表指针（vptr）</strong>，指向该类的 vtable。</li>
+  <li>构造函数不能是虚函数（对象还没完整构造），析构函数建议为虚函数（防止派生类资源泄漏）。</li>
+</ul>
+<pre><code>class Base {
+public:
+    virtual void show() { printf("Base\n"); }
+};
+
+class Derived : public Base {
+public:
+    void show() override { printf("Derived\n"); }
+};
+
+Base *b = new Derived();
+b->show();  // 输出 Derived</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>下面哪种函数不能声明为虚函数？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 构造函数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 析构函数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 普通成员函数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 虚函数</button>
+  <div class="feedback">构造函数不能是虚函数，因为构造时对象类型还未完全确定。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. RAII 与智能指针</h2>
+<p><strong>RAII（Resource Acquisition Is Initialization）</strong>：资源获取即初始化，对象生命周期绑定资源生命周期。</p>
+<ul>
+  <li><code>unique_ptr</code>：独占所有权，自动释放，不能复制。</li>
+  <li><code>shared_ptr</code>：共享所有权，引用计数归零时释放。</li>
+  <li><code>weak_ptr</code>：弱引用，不增加引用计数，用于打破循环引用。</li>
+</ul>
+<pre><code>std::unique_ptr&lt;int&gt; p1(new int(10));
+std::shared_ptr&lt;int&gt; p2 = std::make_shared&lt;int&gt;(20);
+std::weak_ptr&lt;int&gt; wp = p2;</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>哪种智能指针用于共享所有权？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. unique_ptr</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. shared_ptr</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. weak_ptr</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. raw_ptr</button>
+  <div class="feedback">shared_ptr 使用引用计数实现共享所有权。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L9 C++ 核心 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L8_toolchain_hardware.html">← L8 工具链与硬件</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L10_debug_perf.html">L10 调试与性能 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "C++ 中 class 默认访问权限？", "opts": ["public", "private", "protected", "extern"], "a": 1, "note": "class 默认 private，struct 默认 public。"}, {"q": "对象生命周期结束时自动调用？", "opts": ["构造函数", "析构函数", "拷贝构造", "虚函数"], "a": 1, "note": "析构函数在对象销毁时自动调用。"}, {"q": "哪种函数不能是虚函数？", "opts": ["析构函数", "构造函数", "成员函数", "静态函数"], "a": 1, "note": "构造函数不能为虚函数。"}, {"q": "shared_ptr 通过什么管理共享对象？", "opts": ["指针数组", "引用计数", "深拷贝", "全局锁"], "a": 1, "note": "shared_ptr 使用引用计数，归零时释放对象。"}, {"q": "RAII 的核心思想？", "opts": ["资源随对象生命周期管理", "所有函数都内联", "避免虚函数", "全局变量管理"], "a": 0, "note": "RAII 让资源的获取和释放与对象构造析构绑定。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

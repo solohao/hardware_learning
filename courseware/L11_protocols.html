@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L11 协议与手写</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L11 协议与手写</h1>
+    <p>TCP 可靠性 · OSI 七层 · 状态机 · 手写 strcmp · 手写栈</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. TCP 可靠性机制</h2>
+<p>TCP 通过多种机制保证可靠传输：</p>
+<ul>
+  <li><strong>序列号与确认应答</strong>：发送端编号，接收端回复 ACK。</li>
+  <li><strong>超时重传</strong>：未收到 ACK 则重发。</li>
+  <li><strong>滑动窗口</strong>：提高吞吐量，允许连续发送多个包。</li>
+  <li><strong>流量控制</strong>：接收端通过窗口大小限制发送速率。</li>
+  <li><strong>拥塞控制</strong>：慢启动、拥塞避免、快重传/快恢复。</li>
+</ul>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>TCP 用什么确认数据已成功到达对端？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. ACK 确认应答</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. CRC 校验</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 序列号</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 端口号</button>
+  <div class="feedback">TCP 接收方返回 ACK 确认收到数据，超时未 ACK 则重传。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. OSI 七层模型</h2>
+<p>从下往上，每一层为上一层提供服务：</p>
+<ol>
+  <li><strong>物理层</strong>：比特流、电气信号。</li>
+  <li><strong>数据链路层</strong>：帧、MAC 地址、CRC。</li>
+  <li><strong>网络层</strong>：IP、路由。</li>
+  <li><strong>传输层</strong>：TCP/UDP、端口。</li>
+  <li><strong>会话层</strong>：会话管理。</li>
+  <li><strong>表示层</strong>：数据格式、加密、压缩。</li>
+  <li><strong>应用层</strong>：HTTP、FTP、DNS。</li>
+</ol>
+<div class="diagram">
+  <svg width="320" height="220" viewBox="0 0 320 220">
+    <rect x="80" y="20" width="160" height="26" fill="#e53e3e" rx="4"/><text x="160" y="38" text-anchor="middle" fill="#fff" font-size="12">7 应用层 HTTP/DNS</text>
+    <rect x="80" y="48" width="160" height="22" fill="#ed8936" rx="4"/><text x="160" y="63" text-anchor="middle" fill="#fff" font-size="11">6 表示层</text>
+    <rect x="80" y="72" width="160" height="22" fill="#ecc94b" rx="4"/><text x="160" y="87" text-anchor="middle" fill="#2d3748" font-size="11">5 会话层</text>
+    <rect x="80" y="96" width="160" height="22" fill="#48bb78" rx="4"/><text x="160" y="111" text-anchor="middle" fill="#fff" font-size="11">4 传输层 TCP/UDP</text>
+    <rect x="80" y="120" width="160" height="22" fill="#4299e1" rx="4"/><text x="160" y="135" text-anchor="middle" fill="#fff" font-size="11">3 网络层 IP</text>
+    <rect x="80" y="144" width="160" height="22" fill="#667eea" rx="4"/><text x="160" y="159" text-anchor="middle" fill="#fff" font-size="11">2 数据链路层</text>
+    <rect x="80" y="168" width="160" height="26" fill="#805ad5" rx="4"/><text x="160" y="186" text-anchor="middle" fill="#fff" font-size="11">1 物理层</text>
+  </svg>
+</div>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>HTTP 位于 OSI 的哪一层？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 传输层</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 网络层</button>
+  <button class="option" data-c="1" onclick="check(this, true)">C. 应用层</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 数据链路层</button>
+  <div class="feedback">HTTP、DNS、FTP 等都属于 OSI 第七层应用层。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. 状态机 FSM</h2>
+<p>有限状态机由三部分组成：</p>
+<ul>
+  <li><strong>状态 State</strong>：系统当前所处模式。</li>
+  <li><strong>事件 Event</strong>：触发状态转换的输入。</li>
+  <li><strong>转移 Transition</strong>：事件+当前状态 → 新状态 + 动作。</li>
+</ul>
+<pre><code>typedef enum { IDLE, RUNNING, STOPPED } State;
+
+State handle(State s, Event e) {
+    switch (s) {
+        case IDLE:
+            if (e == START) return RUNNING;
+            break;
+        case RUNNING:
+            if (e == STOP) return STOPPED;
+            break;
+        case STOPPED:
+            if (e == RESET) return IDLE;
+            break;
+    }
+    return s;
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>有限状态机的三个基本要素是？</p>
+  <button class="option" data-c="1" onclick="check(this, true)">A. 状态、事件、转移</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 输入、输出、变量</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 函数、类、对象</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 堆、栈、队列</button>
+  <div class="feedback">FSM = 状态集合 + 事件 + 状态转移函数/表。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. 手写 strcmp</h2>
+<p>逐字符比较，直到遇到不同字符或 <code>\0</code>。</p>
+<pre><code>int my_strcmp(const char *a, const char *b) {
+    while (*a && *a == *b) {
+        a++;
+        b++;
+    }
+    return (unsigned char)*a - (unsigned char)*b;
+}</code></pre>
+<ul>
+  <li>返回 0：相等。</li>
+  <li>返回正数：<code>a &gt; b</code>。</li>
+  <li>返回负数：<code>a &lt; b</code>。</li>
+  <li>强制转 <code>unsigned char</code>，避免 char 为有符号时减法溢出。</li>
+</ul>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p><code>my_strcmp("abc", "abd")</code> 的返回值是多少？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 0</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 负数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 正数</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 不确定</button>
+  <div class="feedback">'c'(99) 小于 'd'(100)，所以 a-b 为负。</div>
+</div>
+</div>
+<div class="module">
+<h2>5. 手写栈</h2>
+<p>栈是后进先出（LIFO）结构，可用数组或链表实现。</p>
+<pre><code>#define MAX 100
+int stack[MAX];
+int top = -1;
+
+void push(int v) {
+    if (top >= MAX - 1) return;  // 满
+    stack[++top] = v;
+}
+
+int pop() {
+    if (top < 0) return -1;      // 空
+    return stack[top--];
+}
+
+int empty() { return top == -1; }</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>栈的核心特性是？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 先进先出 FIFO</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 后进先出 LIFO</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 随机访问</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 有序排列</button>
+  <div class="feedback">栈是 LIFO：最后进入的最先弹出。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L11 协议与手写 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L10_debug_perf.html">← L10 调试与性能</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L12_review.html">L12 口述串讲 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "TCP 靠什么机制确认数据到达？", "opts": ["ACK", "CRC", "序列号", "端口号"], "a": 0, "note": "TCP 接收方返回 ACK 确认，超时未 ACK 重传。"}, {"q": "HTTP 在 OSI 哪一层？", "opts": ["传输", "网络", "应用", "会话"], "a": 2, "note": "HTTP 属于 OSI 第七层应用层。"}, {"q": "FSM 的三要素？", "opts": ["状态、事件、转移", "输入、输出、变量", "函数、类、对象", "堆、栈、队列"], "a": 0, "note": "状态、事件、转移是有限状态机的核心。"}, {"q": "手写 strcmp 中为何转 unsigned char？", "opts": ["防止符号扩展", "让代码更短", "支持中文", "防止死循环"], "a": 0, "note": "转 unsigned char 防止有符号 char 相减溢出。"}, {"q": "栈的出栈顺序？", "opts": ["FIFO", "LIFO", "随机", "按大小"], "a": 1, "note": "栈是后进先出 LIFO。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>

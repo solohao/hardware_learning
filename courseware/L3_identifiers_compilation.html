@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L3 标识符与编译</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0; background: #f5f7fa; color: #2c3e50;
+      line-height: 1.7;
+    }
+    header {
+      background: linear-gradient(90deg, #1e3a5f, #2c5282);
+      color: #fff; padding: 1.5rem 1rem; text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    header p { margin: .3rem 0 0; opacity: .9; }
+    .container { max-width: 860px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .module {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .module h2 { margin-top: 0; color: #2c5282; font-size: 1.15rem; }
+    .module h3 { color: #4a5568; font-size: 1rem; margin-top: 1.2rem; }
+    .diagram { text-align: center; margin: 1rem 0; }
+    svg { max-width: 100%; height: auto; }
+    code {
+      background: #edf2f7; padding: .1rem .35rem; border-radius: 4px;
+      font-family: "Consolas", "Monaco", monospace; font-size: .9em; color: #744210;
+    }
+    pre {
+      background: #2d3748; color: #e2e8f0; padding: 1rem;
+      border-radius: 8px; overflow-x: auto; font-size: .9rem;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 1rem 0;
+      font-size: .95rem;
+    }
+    th, td { border: 1px solid #cbd5e0; padding: .55rem .7rem; text-align: left; }
+    th { background: #edf2f7; }
+    .quiz { margin-top: 1rem; padding: 1rem; background: #f7fafc; border-radius: 8px; }
+    .quiz h4 { margin: 0 0 .6rem; color: #2c5282; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      padding: .6rem .8rem; margin: .35rem 0;
+      background: #fff; border: 1px solid #cbd5e0; border-radius: 6px;
+      cursor: pointer; transition: background .12s;
+    }
+    .option:hover { background: #ebf8ff; }
+    .option.correct { background: #c6f6d5; border-color: #276749; }
+    .option.wrong { background: #fed7d7; border-color: #c53030; }
+    .feedback { margin-top: .6rem; font-size: .95rem; display: none; }
+    .final-test { background: #fff; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .final-test h2 { margin-top: 0; color: #2c5282; }
+    .q { margin: 1rem 0; padding: .8rem; background: #f7fafc; border-radius: 6px; }
+    .q p { margin: 0 0 .4rem; font-weight: 600; }
+    label { display: block; margin: .25rem 0; cursor: pointer; }
+    .btn {
+      display: inline-block; background: #2c5282; color: #fff;
+      border: none; padding: .6rem 1.4rem; border-radius: 6px;
+      cursor: pointer; font-size: 1rem; margin-top: 1rem;
+    }
+    .btn:hover { background: #1e3a5f; }
+    .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; font-weight: 600; display: none; }
+    .nav { margin-top: 1rem; text-align: center; }
+    .nav a { color: #2c5282; text-decoration: none; margin: 0 .8rem; }
+    .nav span { color: #a0aec0; margin: 0 .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>L3 标识符与编译</h1>
+    <p>static · extern · define/typedef/const · 编译四阶段</p>
+  </header>
+
+  <div class="container">
+<div class="module">
+<h2>1. static 的三种用法</h2>
+<p><code>static</code> 根据修饰位置不同，含义不同：</p>
+<ul>
+  <li><strong>全局变量/函数前的 static</strong>：只在当前文件可见，避免与其他文件重名冲突（内部链接）。</li>
+  <li><strong>函数内的 static 局部变量</strong>：只初始化一次，生命周期贯穿整个程序，值跨调用保留。</li>
+  <li><strong>C++ 类成员 static</strong>：属于类本身，不依赖对象。</li>
+</ul>
+<pre><code>void count() {
+    static int c = 0;  // 只初始化一次
+    c++;
+    printf("%d\n", c);
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>函数内 <code>static int x = 0;</code> 的 <code>x</code> 有什么特点？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 每次调用都重新初始化为 0</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. 只初始化一次，值在多次调用之间保留</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 只能在其他文件中访问</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. 是只读的</button>
+  <div class="feedback">函数内 static 局部变量生命周期与程序相同，只初始化一次，值跨调用保留。</div>
+</div>
+</div>
+<div class="module">
+<h2>2. extern 与多文件</h2>
+<p><code>extern</code> 用于声明一个在其他地方定义的变量或函数，告诉编译器“符号在其他地方”。</p>
+<ul>
+  <li>变量只能在一个 .c 文件中定义，其他文件用 <code>extern</code> 声明。</li>
+  <li>C++ 中 <code>extern "C"</code> 用于关闭名称修饰，让 C++ 代码调用 C 函数。</li>
+</ul>
+<pre><code>// file1.c
+int g_val = 10;
+
+// file2.c
+extern int g_val;  // 声明，不是定义
+void foo() {
+    printf("%d\n", g_val);
+}</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>在 <code>file2.c</code> 中使用 <code>file1.c</code> 定义的全局变量 <code>int g</code>，应该怎么写？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. int g = 0;</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. extern int g;</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. static int g;</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. define g</button>
+  <div class="feedback">用 extern 声明外部定义的全局变量，避免重复定义。</div>
+</div>
+</div>
+<div class="module">
+<h2>3. #define、typedef 与 const</h2>
+<table>
+  <tr><th>关键字/指令</th><th>作用</th><th>注意</th></tr>
+  <tr><td><code>#define</code></td><td>预处理期文本替换</td><td>无类型检查，可能因括号缺失导致意外</td></tr>
+  <tr><td><code>typedef</code></td><td>给已有类型起别名</td><td>有类型语义，编译器能检查</td></tr>
+  <tr><td><code>const</code></td><td>修饰只读</td><td>指向常量的指针 vs 常量指针要分清</td></tr>
+</table>
+<pre><code>#define PINT int *       // 文本替换
+typedef int* PINT;       // 类型别名
+const int *p;            // p 指向的 int 不能改，p 本身可以改
+int * const p;           // p 本身不能改，指向的 int 可以改</code></pre>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>下面哪个是“类型安全的别名”？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. #define UINT unsigned int</button>
+  <button class="option" data-c="1" onclick="check(this, true)">B. typedef unsigned int UINT;</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. const unsigned int</button>
+  <button class="option" data-c="0" onclick="check(this, false)">D. #typedef</button>
+  <div class="feedback">typedef 是编译器理解的类型别名，有类型检查。</div>
+</div>
+</div>
+<div class="module">
+<h2>4. 编译四阶段</h2>
+<p>C/C++ 程序从源码到可执行文件通常经历四个阶段：</p>
+<ol>
+  <li><strong>预处理</strong>：<code>gcc -E</code>，展开宏、头文件包含、条件编译，生成 .i。</li>
+  <li><strong>编译</strong>：<code>gcc -S</code>，把预处理后的代码转成汇编，生成 .s。</li>
+  <li><strong>汇编</strong>：<code>gcc -c</code>，把汇编转成目标文件 .o（机器码）。</li>
+  <li><strong>链接</strong>：<code>gcc</code>，把多个 .o 和库合并为可执行文件，解析符号地址。</li>
+</ol>
+<div class="diagram">
+  <svg width="520" height="100" viewBox="0 0 520 100">
+    <rect x="20" y="30" width="90" height="40" fill="#4299e1" rx="5"/><text x="65" y="55" text-anchor="middle" fill="#fff" font-size="12">.c 源文件</text>
+    <text x="120" y="55" font-size="18">→</text>
+    <rect x="140" y="30" width="70" height="40" fill="#ed8936" rx="5"/><text x="175" y="55" text-anchor="middle" fill="#fff" font-size="12">预处理</text>
+    <text x="220" y="55" font-size="18">→</text>
+    <rect x="240" y="30" width="60" height="40" fill="#48bb78" rx="5"/><text x="270" y="55" text-anchor="middle" fill="#fff" font-size="12">编译</text>
+    <text x="310" y="55" font-size="18">→</text>
+    <rect x="330" y="30" width="60" height="40" fill="#9f7aea" rx="5"/><text x="360" y="55" text-anchor="middle" fill="#fff" font-size="12">汇编</text>
+    <text x="400" y="55" font-size="18">→</text>
+    <rect x="420" y="30" width="70" height="40" fill="#e53e3e" rx="5"/><text x="455" y="55" text-anchor="middle" fill="#fff" font-size="12">链接</text>
+    <text x="260" y="90" text-anchor="middle" font-size="12" fill="#4a5568">.o 文件合并，解析函数/全局变量地址</text>
+  </svg>
+</div>
+<div class="quiz">
+  <h4>快速检查</h4>
+  <p>哪个阶段负责把多个 .o 文件合并并解析未定义符号？</p>
+  <button class="option" data-c="0" onclick="check(this, false)">A. 预处理</button>
+  <button class="option" data-c="0" onclick="check(this, false)">B. 编译</button>
+  <button class="option" data-c="0" onclick="check(this, false)">C. 汇编</button>
+  <button class="option" data-c="1" onclick="check(this, true)">D. 链接</button>
+  <div class="feedback">链接阶段合并目标文件和库，把符号引用解析为实际地址。</div>
+</div>
+</div>
+
+    <div class="final-test">
+      <h2>L3 标识符与编译 课程小测</h2>
+      <div id="finalQuiz"></div>
+      <button class="btn" onclick="gradeFinal()">提交小测</button>
+      <div id="finalResult" class="result"></div>
+    </div>
+
+    <div class="nav">
+      <a href="L2_storage_layout.html">← L2 存储布局</a>
+      <a href="index.html">返回课程目录</a>
+      <a href="L4_c_misc.html">L4 C 杂项 →</a>
+    </div>
+  </div>
+
+  <script>
+    function check(btn, isCorrect) {
+      const quiz = btn.closest('.quiz');
+      const options = quiz.querySelectorAll('.option');
+      options.forEach(o => { o.disabled = true; });
+      if (isCorrect) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        options.forEach(o => { if (o.getAttribute('data-c') === '1') o.classList.add('correct'); });
+      }
+      const fb = quiz.querySelector('.feedback');
+      fb.style.display = 'block';
+      fb.style.color = isCorrect ? '#276749' : '#c53030';
+    }
+
+    const questions = [{"q": "函数内 static 局部变量的生命周期是？", "opts": ["函数调用期间", "和程序一样长", "只在 if 块内", "每次调用重新初始化"], "a": 1, "note": "函数内 static 局部变量生命周期与程序相同。"}, {"q": "extern 的主要作用是？", "opts": ["定义变量", "声明外部定义的符号", "声明 static 变量", "申请内存"], "a": 1, "note": "extern 用于声明在其他文件中定义的变量或函数。"}, {"q": "typedef 和 #define 的关键区别是？", "opts": ["都是预处理替换", "typedef 有类型检查，#define 只是文本替换", "作用完全相同", "#define 更快"], "a": 1, "note": "typedef 是类型别名，编译器参与类型检查。"}, {"q": "C 程序编译四阶段中，哪个阶段生成 .o 目标文件？", "opts": ["预处理", "编译", "汇编", "链接"], "a": 2, "note": "汇编阶段把汇编转成机器码目标文件。"}, {"q": "链接阶段的主要工作是？", "opts": ["展开头文件", "生成汇编", "合并目标文件并解析符号", "检查语法"], "a": 2, "note": "链接负责合并 .o 和库，解析未定义符号。"}];
+
+    function renderFinal() {
+      const container = document.getElementById('finalQuiz');
+      questions.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        let html = `<p>${idx + 1}. ${item.q}</p>`;
+        item.opts.forEach((opt, i) => {
+          html += `<label><input type="radio" name="fq${idx}" value="${i}"> ${opt}</label>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    function gradeFinal() {
+      let score = 0;
+      let detail = '';
+      questions.forEach((item, idx) => {
+        const radios = document.getElementsByName('fq' + idx);
+        let chosen = -1;
+        for (const r of radios) if (r.checked) chosen = parseInt(r.value);
+        const ok = chosen === item.a;
+        if (ok) score++;
+        detail += `<div style="margin:.3rem 0">${idx + 1}. ${ok ? '✔' : '✘'} ${item.note}</div>`;
+      });
+      const res = document.getElementById('finalResult');
+      let msg = `得分：${score}/${questions.length}。`;
+      if (score >= 4) {
+        msg += '掌握不错，可以进入下一课。';
+        res.style.background = '#c6f6d5';
+        res.style.color = '#22543d';
+      } else {
+        msg += '建议复习本课重点后再测一次。';
+        res.style.background = '#feebc8';
+        res.style.color = '#744210';
+      }
+      res.innerHTML = msg + '<br>' + detail;
+      res.style.display = 'block';
+    }
+
+    renderFinal();
+  </script>
+</body>
+</html>
